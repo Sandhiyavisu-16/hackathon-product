@@ -295,17 +295,13 @@ class ModelConfigService:
         )
         
         print(f"Testing with provider: {config['provider']}, model: {model_name}")
-        print(f"Azure endpoint: {azure_endpoint}")
         print(f"Settings: {config['settings']}")
         
-        # Test using LLM service
+        # Test using LLM service (now using LiteLLM)
         result = await llm_service.test_model(
             provider=config['provider'],
             model_name=model_name,
-            api_key=config['settings'].get('api_key', ''),
-            api_base=config['settings'].get('api_base'),
-            api_version=config['settings'].get('api_version'),
-            azure_endpoint=azure_endpoint
+            settings=config['settings']
         )
         
         print(f"LLM test result: {result}")

@@ -315,14 +315,18 @@ async def test_llm_model(
     request: TestModelRequest,
     user=Depends(get_current_user)
 ):
-    """Test an LLM model configuration"""
+    """Test an LLM model configuration using LiteLLM"""
+    # Build settings dict
+    settings = {
+        'api_key': request.api_key,
+        'api_base': request.api_base,
+        'api_version': request.api_version
+    }
+    
     result = await llm_service.test_model(
         provider=request.provider,
         model_name=request.model_name,
-        api_key=request.api_key,
-        api_base=request.api_base,
-        api_version=request.api_version,
-        azure_endpoint=request.azure_endpoint,
+        settings=settings,
         prompt=request.prompt
     )
     return result
@@ -333,15 +337,19 @@ async def chat_completion(
     request: ChatCompletionRequest,
     user=Depends(get_current_user)
 ):
-    """Send a chat completion request"""
+    """Send a chat completion request using LiteLLM"""
+    # Build settings dict
+    settings = {
+        'api_key': request.api_key,
+        'api_base': request.api_base,
+        'api_version': request.api_version
+    }
+    
     result = await llm_service.chat_completion(
         provider=request.provider,
         model_name=request.model_name,
         messages=request.messages,
-        api_key=request.api_key,
-        api_base=request.api_base,
-        api_version=request.api_version,
-        azure_endpoint=request.azure_endpoint,
+        settings=settings,
         temperature=request.temperature,
         max_tokens=request.max_tokens
     )

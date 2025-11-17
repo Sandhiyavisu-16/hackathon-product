@@ -1,125 +1,164 @@
 """
-LLM Service - Unified interface for multiple LLM providers
-Uses OpenAI SDK for compatibility across providers
+LLM Service - Multi-provider LLM integration using LiteLLM
+Supports 100+ LLM providers through a unified interface
 """
 from typing import Dict, List, Any, Optional
-import openai
-from openai import OpenAI, AzureOpenAI
+import litellm
+from litellm import completion, acompletion
+import json
+import os
 
 
 class LLMService:
     """
-    Unified LLM service supporting multiple providers:
-    - OpenAI (GPT models)
-    - Azure OpenAI
-    - Google Gemini
-    - Anthropic Claude
-    - Custom endpoints
+    Unified LLM service using LiteLLM
+    Supports: OpenAI, Azure OpenAI, Google Gemini, Anthropic Claude, and 100+ more providers
     """
     
     def __init__(self):
-        self.clients: Dict[str, Any] = {}
+        # Configure LiteLLM
+        litellm.drop_params = True  # Drop unsupported params instead of erroring
+        litellm.set_verbose = False  # Disable verbose logging
     
-    def get_client(
+    def _build_model_string(
         self,
         provider: str,
-        api_key: str,
-        api_base: Optional[str] = None,
-        api_version: Optional[str] = None,
-        azure_endpoint: Optional[str] = None
-    ) -> OpenAI:
+        model_name: str,
+        settings: Dict[str, Any]
+    ) -> str:
         """
-        Get or create a client for the specified provider
+        Build LiteLLM model string based on provider
         
-        Args:
-            provider: Provider name (openai, azure, gemini, claude, etc.)
-            api_key: API key for the provider
-            api_base: Base URL for API (optional)
-            api_version: API version (for Azure)
-            azure_endpoint: Azure endpoint URL
+        LiteLLM uses format: provider/deployment_name
+        For Azure, we need the deployment name from settings
+        """
+        provider_lower = provider.lower()
         
-        Returns:
-            OpenAI-compatible client
+        # Azure OpenAI - use deployment name if available
+        if 'azure' in provider_lower:
+            # Azure needs deployment name, not model name
+            deployment = settings.get('deployment_name') or settings.get('model') or model_name
+            return f"azure/{deployment}"
+        
+        # Google Gemini
+        elif 'gemini' in provider_lower or 'google' in provider_lower:
+            return f"gemini/{model_name}"
+        
+        # Anthropic Claude
+        elif 'claude' in provider_lower or 'anthropic' in provider_lower:
+            return model_name  # Claude models don't need prefix
+        
+        # OpenAI
+        elif 'openai' in provider_lower or 'gpt' in provider_lower:
+            return model_name  # OpenAI models don't need prefix
+        
+        # Default
+        else:
+            return model_name
+    
+    def _prepare_env_vars(self, provider: str, settings: Dict[str, Any]):
+        """
+        Set environment variables required by LiteLLM for the provider
         """
         provider_lower = provider.lower()
         
         # Azure OpenAI
         if 'azure' in provider_lower:
-            return AzureOpenAI(
-                api_key=api_key,
-                api_version=api_version or "2024-02-15-preview",
-                azure_endpoint=azure_endpoint or api_base
-            )
+            if settings.get('api_key'):
+                os.environ['AZURE_API_KEY'] = settings['api_key']
+            # Get endpoint from any of these keys
+            endpoint = settings.get('azure_endpoint') or settings.get('endpoint') or settings.get('api_base')
+            if endpoint:
+                os.environ['AZURE_API_BASE'] = endpoint
+            if settings.get('api_version'):
+                os.environ['AZURE_API_VERSION'] = settings['api_version']
         
-        # Google Gemini (using OpenAI-compatible endpoint)
+        # Google Gemini
         elif 'gemini' in provider_lower or 'google' in provider_lower:
-            return OpenAI(
-                api_key=api_key,
-                base_url=api_base or "https://generativelanguage.googleapis.com/v1beta/openai/"
-            )
+            if settings.get('api_key'):
+                os.environ['GEMINI_API_KEY'] = settings['api_key']
         
-        # Anthropic Claude (using OpenAI-compatible endpoint)
+        # Anthropic Claude
         elif 'claude' in provider_lower or 'anthropic' in provider_lower:
-            return OpenAI(
-                api_key=api_key,
-                base_url=api_base or "https://api.anthropic.com/v1"
-            )
+            if settings.get('api_key'):
+                os.environ['ANTHROPIC_API_KEY'] = settings['api_key']
         
-        # OpenAI (default)
+        # OpenAI
         elif 'openai' in provider_lower or 'gpt' in provider_lower:
-            return OpenAI(api_key=api_key)
-        
-        # Custom endpoint
-        else:
-            return OpenAI(
-                api_key=api_key,
-                base_url=api_base
-            )
+            if settings.get('api_key'):
+                os.environ['OPENAI_API_KEY'] = settings['api_key']
     
     async def test_model(
         self,
         provider: str,
         model_name: str,
-        api_key: str,
-        api_base: Optional[str] = None,
-        api_version: Optional[str] = None,
-        azure_endpoint: Optional[str] = None,
+        settings: Dict[str, Any],
         prompt: str = "Hello, this is a test message. Please respond with 'Test successful'."
     ) -> Dict[str, Any]:
         """
-        Test a model configuration
+        Test a model configuration using LiteLLM
         
         Args:
-            provider: Provider name
+            provider: Provider name (azure_openai, gemini, claude, etc.)
             model_name: Model identifier
-            api_key: API key
-            api_base: Base URL (optional)
-            api_version: API version (optional)
-            azure_endpoint: Azure endpoint (optional)
+            settings: Provider settings (api_key, api_base, etc.)
             prompt: Test prompt
         
         Returns:
             Dict with success status and response or error
         """
         try:
-            # Get client
-            client = self.get_client(
-                provider=provider,
-                api_key=api_key,
-                api_base=api_base,
-                api_version=api_version,
-                azure_endpoint=azure_endpoint
-            )
+            print(f"[LLM Service] Testing model: {model_name}")
+            print(f"[LLM Service] Provider: {provider}")
+            print(f"[LLM Service] Settings keys: {list(settings.keys())}")
             
-            # Send test message
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=[
-                    {"role": "user", "content": prompt}
-                ],
-                max_tokens=100,
-                temperature=0.7
-            )
+            # Validate required settings for Azure
+            if 'azure' in provider.lower():
+                if not settings.get('api_key'):
+                    return {
+                        'success': False,
+                        'message': 'Azure API key is required',
+                        'error': 'Missing api_key in settings'
+                    }
+                # Check for endpoint in any of these keys
+                if not (settings.get('api_base') or settings.get('azure_endpoint') or settings.get('endpoint')):
+                    return {
+                        'success': False,
+                        'message': 'Azure endpoint is required',
+                        'error': 'Missing api_base, azure_endpoint, or endpoint in settings'
+                    }
+            
+            # Prepare environment variables
+            self._prepare_env_vars(provider, settings)
+            
+            # Build model string
+            model_string = self._build_model_string(provider, model_name, settings)
+            print(f"[LLM Service] Model string: {model_string}")
+            
+            # Prepare kwargs for LiteLLM
+            kwargs = {
+                'model': model_string,
+                'messages': [{"role": "user", "content": prompt}],
+                'max_tokens': 100,
+                'temperature': 0.7
+            }
+            
+            # Add provider-specific parameters
+            if 'azure' in provider.lower():
+                # Get endpoint from any of these keys
+                endpoint = settings.get('azure_endpoint') or settings.get('endpoint') or settings.get('api_base')
+                
+                # Azure requires api_base and api_version
+                if endpoint:
+                    kwargs['api_base'] = endpoint
+                
+                if settings.get('api_version'):
+                    kwargs['api_version'] = settings['api_version']
+                
+                print(f"[LLM Service] Azure kwargs: {kwargs}")
+            
+            # Send test message using LiteLLM
+            response = await acompletion(**kwargs)
             
             # Check if response is valid
             if response and response.choices and len(response.choices) > 0:
@@ -153,25 +192,19 @@ class LLMService:
         provider: str,
         model_name: str,
         messages: List[Dict[str, str]],
-        api_key: str,
-        api_base: Optional[str] = None,
-        api_version: Optional[str] = None,
-        azure_endpoint: Optional[str] = None,
+        settings: Dict[str, Any],
         temperature: float = 0.7,
         max_tokens: int = 1000,
         **kwargs
     ) -> Dict[str, Any]:
         """
-        Send a chat completion request
+        Send a chat completion request using LiteLLM
         
         Args:
             provider: Provider name
             model_name: Model identifier
             messages: List of message dicts with 'role' and 'content'
-            api_key: API key
-            api_base: Base URL (optional)
-            api_version: API version (optional)
-            azure_endpoint: Azure endpoint (optional)
+            settings: Provider settings (api_key, api_base, etc.)
             temperature: Sampling temperature
             max_tokens: Maximum tokens to generate
             **kwargs: Additional parameters
@@ -180,23 +213,35 @@ class LLMService:
             Dict with response or error
         """
         try:
-            # Get client
-            client = self.get_client(
-                provider=provider,
-                api_key=api_key,
-                api_base=api_base,
-                api_version=api_version,
-                azure_endpoint=azure_endpoint
-            )
+            # Prepare environment variables
+            self._prepare_env_vars(provider, settings)
             
-            # Send request
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens,
+            # Build model string
+            model_string = self._build_model_string(provider, model_name, settings)
+            
+            # Prepare kwargs for LiteLLM
+            litellm_kwargs = {
+                'model': model_string,
+                'messages': messages,
+                'temperature': temperature,
+                'max_tokens': max_tokens,
                 **kwargs
-            )
+            }
+            
+            # Add provider-specific parameters
+            if 'azure' in provider.lower():
+                # Get endpoint from any of these keys
+                endpoint = settings.get('azure_endpoint') or settings.get('endpoint') or settings.get('api_base')
+                
+                # Azure requires api_base and api_version
+                if endpoint:
+                    litellm_kwargs['api_base'] = endpoint
+                
+                if settings.get('api_version'):
+                    litellm_kwargs['api_version'] = settings['api_version']
+            
+            # Send request using LiteLLM
+            response = await acompletion(**litellm_kwargs)
             
             # Return response
             return {
@@ -231,13 +276,10 @@ class LLMService:
         self,
         provider: str,
         model_name: str,
-        api_key: str,
+        settings: Dict[str, Any],
         idea_title: str,
         idea_summary: str,
-        rubric_criteria: List[Dict[str, Any]],
-        api_base: Optional[str] = None,
-        api_version: Optional[str] = None,
-        azure_endpoint: Optional[str] = None
+        rubric_criteria: List[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """
         Score an idea using LLM based on rubric criteria
@@ -245,13 +287,10 @@ class LLMService:
         Args:
             provider: Provider name
             model_name: Model identifier
-            api_key: API key
+            settings: Provider settings (api_key, api_base, etc.)
             idea_title: Title of the idea
             idea_summary: Summary/description of the idea
             rubric_criteria: List of rubric criteria with name, description, scale
-            api_base: Base URL (optional)
-            api_version: API version (optional)
-            azure_endpoint: Azure endpoint (optional)
         
         Returns:
             Dict with scores and feedback
@@ -295,17 +334,13 @@ Format your response as JSON with this structure:
             provider=provider,
             model_name=model_name,
             messages=[{"role": "user", "content": prompt}],
-            api_key=api_key,
-            api_base=api_base,
-            api_version=api_version,
-            azure_endpoint=azure_endpoint,
+            settings=settings,
             temperature=0.3,  # Lower temperature for more consistent scoring
             max_tokens=2000
         )
         
         if result['success']:
             try:
-                import json
                 # Extract JSON from response
                 content = result['choices'][0]['message']['content']
                 
