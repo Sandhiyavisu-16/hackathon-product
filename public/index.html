@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model & Rubric Config Platform</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+        }
+
+        .login-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .role-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .role-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .role-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .role-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            color: #666;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: #f0f0f0;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .content.active {
+            display: block;
+        }
+
+        .rubric-list {
+            margin-top: 20px;
+        }
+
+        .rubric-item {
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+        }
+
+        .rubric-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .rubric-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .rubric-weight {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .weight-input {
+            width: 80px;
+            padding: 8px;
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            color: #667eea;
+        }
+
+        .weight-input:focus {
+            outline: none;
+            border-color: #5568d3;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .rubric-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+
+        .btn-danger {
+            background: #f44336;
+        }
+
+        .btn-danger:hover {
+            background: #d32f2f;
+        }
+
+        .btn-success {
+            background: #4caf50;
+        }
+
+        .btn-success:hover {
+            background: #388e3c;
+        }
+
+        .rubric-description {
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .rubric-guidance {
+            color: #888;
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-default {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-active {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .weight-total {
+            padding: 20px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .weight-total h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .weight-value {
+            font-size: 48px;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .weight-value.valid {
+            color: #4caf50;
+        }
+
+        .weight-value.invalid {
+            color: #f44336;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .upload-zone {
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 20px;
+        }
+
+        .upload-zone:hover {
+            background: #f0f4ff;
+        }
+
+        .upload-zone.dragover {
+            background: #e3f2fd;
+            border-color: #1976d2;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .idea-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .idea-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .idea-card h4 {
+            margin-top: 0;
+            color: #667eea;
+            font-size: 18px;
+        }
+
+        .idea-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 12px;
+            color: #666;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+
+        .idea-meta span {
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .idea-field {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .idea-field strong {
+            color: #333;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        /* Toast Notifications */
+        .toast {
+            min-width: 300px;
+            background: white;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            animation: slideIn 0.3s ease-out;
+            border-left: 4px solid #4caf50;
+        }
+
+        .toast.success {
+            border-left-color: #4caf50;
+        }
+
+        .toast.error {
+            border-left-color: #f44336;
+        }
+
+        .toast.info {
+            border-left-color: #2196f3;
+        }
+
+        .toast-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .toast-content {
+            flex: 1;
+        }
+
+        .toast-title {
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .toast-message {
+            font-size: 14px;
+            color: #666;
+            line-height: 1.4;
+        }
+
+        .toast-close {
+            cursor: pointer;
+            color: #999;
+            font-size: 20px;
+            line-height: 1;
+            padding: 0 4px;
+            flex-shrink: 0;
+        }
+
+        .toast-close:hover {
+            color: #333;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+        }
+
+        .toast.hiding {
+            animation: slideOut 0.3s ease-in forwards;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.3s;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .modal-close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            color: #999;
+            cursor: pointer;
+            line-height: 1;
+            transition: color 0.2s;
+        }
+
+        .modal-close:hover {
+            color: #333;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        .modal-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .modal-section h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .modal-section p {
+            margin: 0;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .modal-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+
+        .modal-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background: #4caf50;
+        }
+
+        .status-offline {
+            background: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="login-section">
+            <h2>Select Your Role</h2>
+            <div class="role-buttons">
+                <button class="role-btn" onclick="selectRole('admin')">
+                    👑 Admin<br><small>Full Access</small>
+                </button>
+                <button class="role-btn" onclick="selectRole('contributor')">
+                    ✍️ Contributor<br><small>Submit Ideas</small>
+                </button>
+            </div>
+            <div id="currentRole" style="margin-top: 20px; text-align: center; color: #666;"></div>
+        </div>
+
+        <div class="tabs">
+            <button id="rubricsTab" class="tab active" onclick="showTab('rubrics')">📊 Rubrics</button>
+            <button id="modelsTab" class="tab" onclick="showTab('models')">🤖 Model Config</button>
+            <button id="ideasTab" class="tab" onclick="showTab('ideas')">💡 Submit Ideas</button>
+        </div>
+
+        <!-- Rubrics Tab -->
+        <div id="rubrics" class="content active">
+            <h2>Scoring Rubrics</h2>
+            <div id="rubricsError" class="error" style="display: none;"></div>
+            <div id="rubricsSuccess" class="success" style="display: none;"></div>
+            
+            <div class="weight-total">
+                <h3>Total Weight</h3>
+                <div id="totalWeight" class="weight-value">-</div>
+                <p style="margin-top: 10px; color: #666;">Must equal 100%</p>
+            </div>
+
+            <button class="btn" onclick="showCreateRubricForm()" style="margin-bottom: 20px;">
+                ➕ Add Custom Rubric
+            </button>
+
+            <div id="createRubricForm" style="display: none; margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                <h3>Create Custom Rubric</h3>
+                <div class="form-group">
+                    <label>Rubric Name *</label>
+                    <input type="text" id="rubricName" placeholder="e.g., Innovation Score">
+                </div>
+                <div class="form-group">
+                    <label>Description *</label>
+                    <textarea id="rubricDescription" placeholder="Brief description of what this rubric measures"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Guidance *</label>
+                    <textarea id="rubricGuidance" placeholder="How to score this rubric (e.g., Score 5 for highly innovative, 1 for conventional)"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Weight (%) *</label>
+                    <input type="number" id="rubricWeight" min="0" max="100" value="10" placeholder="10">
+                    <small style="color: #666;">Adjust other rubrics to maintain 100% total</small>
+                </div>
+                <button class="btn" onclick="createCustomRubric()">Create Rubric</button>
+                <button class="btn" onclick="hideCreateRubricForm()" style="background: #999; margin-left: 10px;">Cancel</button>
+            </div>
+
+            <div id="rubricsLoading" class="loading">Loading rubrics...</div>
+            <div id="rubricsList" class="rubric-list"></div>
+        </div>
+
+        <!-- Models Tab -->
+        <div id="models" class="content">
+            <h2>Model Configurations</h2>
+            <div id="modelsError" class="error" style="display: none;"></div>
+            <div id="modelsSuccess" class="success" style="display: none;"></div>
+            
+            <div style="background: #e3f2fd; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <strong>📚 Need Help?</strong>
+                        <div style="margin-top: 10px; display: flex; gap: 15px; flex-wrap: wrap;">
+                            <a href="help.html" target="_blank" style="color: #1976d2; text-decoration: none; font-weight: 600;">
+                                🎓 Complete Admin Guide
+                            </a>
+                            <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: #4caf50; text-decoration: none; font-weight: 600;">
+                                🔑 Get Free Gemini API Key
+                            </a>
+                        </div>
+                    </div>
+                    <a href="help.html" target="_blank" class="btn" style="margin: 0;">
+                        📖 View Help
+                    </a>
+                </div>
+            </div>
+
+            <button class="btn" onclick="showCreateModelForm()" style="margin-bottom: 20px;">
+                ➕ Create New Configuration
+            </button>
+
+            <div id="createModelForm" style="display: none; margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                <h3>Create Model Configuration</h3>
+                <div class="form-group">
+                    <label>Provider *</label>
+                    <select id="provider" onchange="updateProviderFields()">
+                        <option value="azure_openai">Azure OpenAI</option>
+                        <option value="gemini">Gemini</option>
+                        <option value="gemma">Gemma</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Configuration Name *</label>
+                    <input type="text" id="configName" placeholder="e.g., Production Azure OpenAI">
+                </div>
+
+                <!-- Azure OpenAI Fields -->
+                <div id="azureFields">
+                    <div style="background: #fff3e0; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px;">
+                        <strong>💡 Azure OpenAI Setup:</strong><br>
+                        Get your endpoint and API key from <a href="https://portal.azure.com" target="_blank">Azure Portal</a> → Azure OpenAI Service
+                    </div>
+                    <div class="form-group">
+                        <label>Endpoint URL *</label>
+                        <input type="text" id="azureEndpoint" placeholder="https://your-resource.openai.azure.com/">
+                    </div>
+                    <div class="form-group">
+                        <label>API Key *</label>
+                        <input type="password" id="azureApiKey" placeholder="Your Azure OpenAI API key">
+                    </div>
+                    <div class="form-group">
+                        <label>Deployment Name *</label>
+                        <input type="text" id="azureDeployment" placeholder="gpt-4">
+                    </div>
+                    <div class="form-group">
+                        <label>API Version</label>
+                        <input type="text" id="azureApiVersion" value="2024-08-01" placeholder="2024-08-01">
+                    </div>
+                </div>
+
+                <!-- Gemini Fields -->
+                <div id="geminiFields" style="display: none;">
+                    <div style="background: #e3f2fd; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px;">
+                        <strong>💡 Two API Options:</strong><br>
+                        <strong>Option 1 (Simpler):</strong> Use API key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> - Just enter API Key + Model<br>
+                        <strong>Option 2 (Advanced):</strong> Use Vertex AI - Enter Project ID + Location + Bearer Token
+                    </div>
+                    <div class="form-group">
+                        <label>API Key * (from Google AI Studio)</label>
+                        <input type="password" id="geminiApiKey" placeholder="AIzaSy...">
+                        <small style="color: #666;">Get your API key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a></small>
+                    </div>
+                    <div class="form-group">
+                        <label>Model Name *</label>
+                        <input type="text" id="geminiModel" placeholder="gemini-2.0-flash-exp" value="gemini-2.0-flash-exp">
+                        <small style="color: #666;">Examples: gemini-2.5-flash, gemini-2.0-flash-exp, gemini-1.5-flash, gemini-1.5-pro, gemini-pro</small>
+                    </div>
+                    <div style="border-top: 1px solid #e0e0e0; margin: 20px 0; padding-top: 20px;">
+                        <strong>Optional: Vertex AI Settings</strong>
+                        <small style="display: block; color: #666; margin-bottom: 10px;">Only fill these if using Vertex AI instead of Google AI Studio</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Project ID (Optional - for Vertex AI)</label>
+                        <input type="text" id="geminiProjectId" placeholder="your-gcp-project-id">
+                    </div>
+                    <div class="form-group">
+                        <label>Location (Optional - for Vertex AI)</label>
+                        <input type="text" id="geminiLocation" placeholder="us-central1">
+                    </div>
+                </div>
+
+                <!-- Gemma Fields -->
+                <div id="gemmaFields" style="display: none;">
+                    <div style="background: #e8f5e9; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px;">
+                        <strong>💡 Gemma Setup (Self-Hosted):</strong><br>
+                        <strong>Option 1:</strong> Install <a href="https://ollama.com/download" target="_blank">Ollama</a> → Run: <code>ollama pull gemma:7b</code> → Endpoint: <code>http://localhost:11434</code><br>
+                        <strong>Option 2:</strong> Install <a href="https://lmstudio.ai" target="_blank">LM Studio</a> → Download Gemma → Start Server → Endpoint: <code>http://localhost:1234</code><br>
+                        <a href="GEMMA_FREE_SETUP_GUIDE.md" target="_blank" style="color: #2e7d32; font-weight: 600;">📖 Full Setup Guide</a>
+                    </div>
+                    <div class="form-group">
+                        <label>Endpoint URL *</label>
+                        <input type="text" id="gemmaEndpoint" placeholder="http://localhost:11434">
+                        <small style="color: #666;">Default for Ollama: http://localhost:11434 | LM Studio: http://localhost:1234</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Model ID *</label>
+                        <input type="text" id="gemmaModel" placeholder="gemma:7b">
+                        <small style="color: #666;">Examples: gemma:2b, gemma:7b, gemma2:9b</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Authentication Token (Optional)</label>
+                        <input type="password" id="gemmaAuth" placeholder="Bearer token if required">
+                        <small style="color: #666;">Leave empty for Ollama/LM Studio (no auth needed)</small>
+                    </div>
+                </div>
+
+                <!-- Common Fields -->
+                <div class="form-group">
+                    <label>Temperature</label>
+                    <input type="number" id="temperature" value="0.7" min="0" max="2" step="0.1" placeholder="0.7">
+                    <small style="color: #666;">Controls randomness (0 = deterministic, 2 = very random)</small>
+                </div>
+                <div class="form-group">
+                    <label>Max Tokens</label>
+                    <input type="number" id="maxTokens" value="2048" min="1" max="32000" placeholder="2048">
+                    <small style="color: #666;">Maximum response length</small>
+                </div>
+                <div class="form-group">
+                    <label>Rate Limit (requests/min)</label>
+                    <input type="number" id="rateLimit" value="120" min="1" placeholder="120">
+                </div>
+                <div class="form-group">
+                    <label>Notes (Optional)</label>
+                    <textarea id="configNotes" placeholder="Additional notes about this configuration"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn" onclick="createModelConfig()">Create Configuration</button>
+                    <button class="btn" onclick="hideCreateModelForm()" style="background: #999;">Cancel</button>
+                </div>
+            </div>
+
+            <div id="modelsLoading" class="loading">Loading configurations...</div>
+            <div id="modelsList"></div>
+        </div>
+
+        <!-- Ideas Tab -->
+        <div id="ideas" class="content">
+            <h2>Submit Ideas</h2>
+            <div id="ideasError" class="error" style="display: none;"></div>
+            <div id="ideasSuccess" class="success" style="display: none;"></div>
+            
+            <button class="btn" onclick="downloadTemplate()" style="margin-bottom: 20px;">
+                📥 Download CSV Template
+            </button>
+
+            <!-- Submission Mode Switcher -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="btn" id="singleModeBtn" onclick="showSubmissionMode('single')" 
+                        style="flex: 1; background: #667eea;">
+                    📝 Single Idea
+                </button>
+                <button class="btn" id="bulkModeBtn" onclick="showSubmissionMode('bulk')" 
+                        style="flex: 1; background: #e0e0e0; color: #333;">
+                    📤 Bulk Upload
+                </button>
+                <button class="btn" id="allIdeasBtn" onclick="showSubmissionMode('all')" 
+                        style="flex: 1; background: #e0e0e0; color: #333; display: none;">
+                    📊 All Ideas (Admin)
+                </button>
+            </div>
+
+            <!-- Single Idea Form -->
+            <div id="singleIdeaMode" style="background: #f9f9f9; padding: 30px; border-radius: 12px; max-width: 800px;">
+                <h3 style="margin-top: 0;">📝 Submit Single Idea</h3>
+                
+                <form id="singleIdeaForm" onsubmit="submitSingleIdea(event)">
+                    <!-- Required Fields -->
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                            Idea Title * <span style="color: #999; font-weight: normal;">(5-500 characters)</span>
+                        </label>
+                        <input type="text" name="title" required minlength="5" maxlength="500"
+                               style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                            Brief Summary * <span style="color: #999; font-weight: normal;">(min 10 characters)</span>
+                        </label>
+                        <textarea name="brief_summary" required minlength="10" rows="4"
+                                  style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;"></textarea>
+                    </div>
+
+                    <!-- Optional Fields -->
+                    <details style="margin-bottom: 20px;">
+                        <summary style="cursor: pointer; font-weight: 600; padding: 10px; background: #fff; border-radius: 4px;">
+                            ➕ Additional Details (Optional)
+                        </summary>
+                        <div style="padding: 20px; background: #fff; border-radius: 4px; margin-top: 10px;">
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Challenge/Business Opportunity
+                                </label>
+                                <textarea name="challenge_opportunity" rows="3"
+                                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Novelty, Benefits and Risks
+                                </label>
+                                <textarea name="novelty_benefits_risks" rows="3"
+                                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Responsible AI Adherence
+                                </label>
+                                <textarea name="responsible_ai_adherence" rows="3"
+                                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Additional Documentation
+                                </label>
+                                <textarea name="additional_documentation" rows="3"
+                                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Second File Info
+                                </label>
+                                <textarea name="second_file_info" rows="2"
+                                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Preferred Week of Participation
+                                </label>
+                                <input type="text" name="preferred_week"
+                                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Build Phase Preference
+                                </label>
+                                <input type="text" name="build_phase_preference"
+                                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Build Method Preference
+                                </label>
+                                <input type="text" name="build_method_preference"
+                                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Code Development Preference
+                                </label>
+                                <input type="text" name="code_development_preference"
+                                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                            </div>
+                        </div>
+                    </details>
+
+                    <button type="submit" class="btn" style="width: 100%; padding: 15px; font-size: 18px; font-weight: 600;">
+                        🚀 Submit Idea
+                    </button>
+                </form>
+
+                <div id="singleIdeaStatus" style="display: none; margin-top: 20px; padding: 15px; border-radius: 8px;"></div>
+            </div>
+
+            <!-- Bulk Upload Mode -->
+            <div id="bulkUploadMode" style="background: #f9f9f9; padding: 30px; border-radius: 12px; max-width: 800px; display: none;">
+                <h3 style="margin-top: 0;">📤 Bulk Upload Ideas</h3>
+                
+                <!-- CSV File Upload -->
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 10px;">
+                        1. Upload Ideas File (CSV or Excel) *
+                    </label>
+                    <div class="upload-zone" onclick="document.getElementById('csvFile').click()" style="cursor: pointer;">
+                        <div id="csvFileName" style="font-weight: 600; color: #667eea;">
+                            📄 Click to select CSV or Excel file
+                        </div>
+                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+                            Required: CSV or Excel (.xlsx) file with your ideas
+                        </p>
+                        <input type="file" id="csvFile" class="file-input" accept=".csv,.xlsx,.xls" onchange="handleCsvFileSelect(event)" style="display: none;">
+                    </div>
+                </div>
+
+                <!-- Support File Upload -->
+                <div style="margin-bottom: 25px;">
+                    <label style="display: block; font-weight: 600; margin-bottom: 10px;">
+                        2. Upload Support File (Optional)
+                    </label>
+                    <div class="upload-zone" onclick="document.getElementById('supportFile').click()" style="cursor: pointer;">
+                        <div id="supportFileName" style="font-weight: 600; color: #667eea;">
+                            📎 Click to select support file
+                        </div>
+                        <p style="margin: 5px 0 0 0; font-size: 14px; color: #666;">
+                            Optional: PDF, DOCX, PPTX, MP4, PNG, or JPEG (Max 100MB)
+                        </p>
+                        <input type="file" id="supportFile" class="file-input" 
+                               accept=".pdf,.docx,.pptx,.mp4,.png,.jpg,.jpeg" 
+                               onchange="handleSupportFileSelect(event)" 
+                               style="display: none;">
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button class="btn" onclick="submitIdeas()" id="submitBtn" 
+                        style="width: 100%; padding: 15px; font-size: 18px; font-weight: 600;">
+                    🚀 Submit Ideas
+                </button>
+
+                <!-- Status Messages -->
+                <div id="uploadStatus" style="display: none; margin-top: 20px; padding: 20px; background: white; border-radius: 8px; border: 2px solid #e0e0e0;">
+                    <h4 style="margin-top: 0;">📊 Upload Status</h4>
+                    <div id="uploadDetails"></div>
+                </div>
+            </div>
+
+            <!-- All Ideas (Admin Dashboard) -->
+            <div id="allIdeasMode" style="display: none;">
+                <h3>📊 All Submitted Ideas</h3>
+                <div id="allIdeasLoading" style="display: none; padding: 20px; text-align: center;">
+                    Loading ideas...
+                </div>
+                <div id="allIdeasContainer" style="display: grid; gap: 15px;"></div>
+            </div>
+
+            <!-- Submissions History -->
+            <div id="submissionsHistory" style="margin-top: 40px;">
+                <h3>📋 Your Submissions</h3>
+                <div id="submissionsLoading" style="display: none;">Loading submissions...</div>
+                <div id="submissionsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
+
+    <!-- Idea Details Modal -->
+    <div id="ideaModal" class="modal" onclick="closeIdeaModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="modal-close" onclick="closeIdeaModal()">&times;</span>
+            <div id="ideaModalContent"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

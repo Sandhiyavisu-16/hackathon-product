@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Help - Model Configuration</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        h3 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .help-card {
+            background: #f9f9f9;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+
+        .help-card h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+
+        .step {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .step strong {
+            color: #667eea;
+        }
+
+        code {
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        pre {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            margin: 10px 10px 10px 0;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #764ba2;
+            text-decoration: none;
+        }
+
+        .btn-secondary {
+            background: #4caf50;
+        }
+
+        .btn-secondary:hover {
+            background: #388e3c;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #e0e0e0;
+        }
+
+        .comparison-table th {
+            background: #667eea;
+            color: white;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .badge-free {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .badge-easy {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .badge-recommended {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎓 Admin Help - Model Configuration</h1>
+        <p style="color: #666; margin-bottom: 30px;">Complete guide to setting up AI model providers</p>
+
+        <div style="margin-bottom: 30px;">
+            <a href="index.html" class="btn">← Back to App</a>
+            <a href="GEMINI_SETUP_GUIDE.md" class="btn-secondary btn" target="_blank">📖 Gemini Guide</a>
+            <a href="GEMMA_FREE_SETUP_GUIDE.md" class="btn-secondary btn" target="_blank">🆓 Free API Guide</a>
+        </div>
+
+        <h2>🚀 Quick Start</h2>
+        
+        <div class="help-card">
+            <h3>🎯 Recommended: Use Gemini (Easiest & Free)</h3>
+            <div class="step">
+                <strong>Step 1:</strong> Get free API key from <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a>
+            </div>
+            <div class="step">
+                <strong>Step 2:</strong> In the app, select Provider: <code>Gemini</code>
+            </div>
+            <div class="step">
+                <strong>Step 3:</strong> Enter your API key and model: <code>gemini-2.5-flash</code>
+            </div>
+            <div class="step">
+                <strong>Step 4:</strong> Leave Project ID and Location empty
+            </div>
+            <div class="step">
+                <strong>Step 5:</strong> Click "Test Connection" → Should work immediately! ✅
+            </div>
+        </div>
+
+        <h2>📊 Provider Comparison</h2>
+        
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Provider</th>
+                    <th>Setup Time</th>
+                    <th>Cost</th>
+                    <th>Best For</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Gemini</strong> <span class="badge badge-recommended">Recommended</span></td>
+                    <td>2 minutes</td>
+                    <td><span class="badge badge-free">Free Tier</span></td>
+                    <td>Most users - Easy setup, fast, reliable</td>
+                </tr>
+                <tr>
+                    <td><strong>Azure OpenAI</strong></td>
+                    <td>10 minutes</td>
+                    <td>Pay per use</td>
+                    <td>Enterprise users with Azure subscription</td>
+                </tr>
+                <tr>
+                    <td><strong>Gemma</strong></td>
+                    <td>15 minutes</td>
+                    <td><span class="badge badge-free">100% Free</span></td>
+                    <td>Privacy-focused, offline use, self-hosted</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>🤖 Option 1: Gemini (Cloud API)</h2>
+        
+        <div class="help-card">
+            <h3>What You Need:</h3>
+            <ul>
+                <li>✅ Free API key from Google AI Studio</li>
+                <li>✅ Internet connection</li>
+                <li>✅ 2 minutes of your time</li>
+            </ul>
+        </div>
+
+        <h3>Step-by-Step Setup:</h3>
+        
+        <div class="step">
+            <strong>1. Get API Key</strong><br>
+            Visit: <a href="https://aistudio.google.com/app/apikey" target="_blank">https://aistudio.google.com/app/apikey</a><br>
+            Click "Create API Key" and copy it (starts with <code>AIzaSy...</code>)
+        </div>
+
+        <div class="step">
+            <strong>2. Create Configuration</strong><br>
+            In the app:<br>
+            • Provider: <code>gemini</code><br>
+            • API Key: <code>[Your key from AI Studio]</code><br>
+            • Model: <code>gemini-2.5-flash</code><br>
+            • Leave Project ID and Location <strong>empty</strong>
+        </div>
+
+        <div class="step">
+            <strong>3. Test & Activate</strong><br>
+            • Click "🧪 Test Connection"<br>
+            • Should see: ✅ Connection successful!<br>
+            • Click "✅ Activate"
+        </div>
+
+        <h3>Available Models:</h3>
+        <ul>
+            <li><code>gemini-2.5-flash</code> - Latest and fastest ⭐</li>
+            <li><code>gemini-2.0-flash-exp</code> - Experimental features</li>
+            <li><code>gemini-1.5-flash</code> - Fast and efficient</li>
+            <li><code>gemini-1.5-pro</code> - More capable</li>
+            <li><code>gemini-pro</code> - Original Gemini</li>
+        </ul>
+
+        <h3>Free Tier:</h3>
+        <ul>
+            <li>✅ 60 requests per minute</li>
+            <li>✅ 1,500 requests per day</li>
+            <li>✅ No credit card required</li>
+        </ul>
+
+        <h2>☁️ Option 2: Azure OpenAI</h2>
+        
+        <div class="help-card">
+            <h3>What You Need:</h3>
+            <ul>
+                <li>✅ Azure subscription</li>
+                <li>✅ Azure OpenAI resource</li>
+                <li>✅ Deployed model</li>
+            </ul>
+        </div>
+
+        <h3>Setup:</h3>
+        <div class="step">
+            <strong>1. Get Credentials from Azure Portal</strong><br>
+            • Go to <a href="https://portal.azure.com" target="_blank">Azure Portal</a><br>
+            • Navigate to your Azure OpenAI resource<br>
+            • Copy Endpoint URL and API Key
+        </div>
+
+        <div class="step">
+            <strong>2. Configure in App</strong><br>
+            • Provider: <code>azure_openai</code><br>
+            • Endpoint: <code>https://your-resource.openai.azure.com/</code><br>
+            • API Key: <code>[Your Azure key]</code><br>
+            • Deployment: <code>[Your deployment name]</code><br>
+            • API Version: <code>2024-08-01-preview</code>
+        </div>
+
+        <h2>🖥️ Option 3: Gemma (Self-Hosted)</h2>
+        
+        <div class="help-card">
+            <h3>What You Need:</h3>
+            <ul>
+                <li>✅ Your own computer/server</li>
+                <li>✅ 8GB+ RAM (for gemma:7b)</li>
+                <li>✅ 15 minutes setup time</li>
+            </ul>
+        </div>
+
+        <h3>Method 1: Using Ollama (Easiest)</h3>
+        
+        <div class="step">
+            <strong>1. Install Ollama</strong><br>
+            Download from: <a href="https://ollama.com/download" target="_blank">https://ollama.com/download</a>
+        </div>
+
+        <div class="step">
+            <strong>2. Download Gemma Model</strong><br>
+            <pre>ollama pull gemma:7b</pre>
+        </div>
+
+        <div class="step">
+            <strong>3. Start Server</strong><br>
+            <pre>ollama serve</pre>
+            Server runs at: <code>http://localhost:11434</code>
+        </div>
+
+        <div class="step">
+            <strong>4. Configure in App</strong><br>
+            • Provider: <code>gemma</code><br>
+            • Endpoint: <code>http://localhost:11434</code><br>
+            • Model: <code>gemma:7b</code><br>
+            • Auth Token: <strong>Leave empty</strong>
+        </div>
+
+        <h3>Method 2: Using LM Studio (GUI)</h3>
+        
+        <div class="step">
+            <strong>1. Install LM Studio</strong><br>
+            Download from: <a href="https://lmstudio.ai" target="_blank">https://lmstudio.ai</a>
+        </div>
+
+        <div class="step">
+            <strong>2. Download Gemma</strong><br>
+            • Open LM Studio<br>
+            • Search for "gemma"<br>
+            • Download gemma-7b
+        </div>
+
+        <div class="step">
+            <strong>3. Start Server</strong><br>
+            • Click "Local Server" tab<br>
+            • Click "Start Server"<br>
+            • Server runs at: <code>http://localhost:1234</code>
+        </div>
+
+        <div class="step">
+            <strong>4. Configure in App</strong><br>
+            • Provider: <code>gemma</code><br>
+            • Endpoint: <code>http://localhost:1234</code><br>
+            • Model: <code>gemma-7b</code><br>
+            • Auth Token: <strong>Leave empty</strong>
+        </div>
+
+        <h2>❓ Common Questions</h2>
+        
+        <div class="help-card">
+            <h3>Q: Which provider should I use?</h3>
+            <p><strong>A:</strong> For most users, <strong>Gemini</strong> is the best choice. It's free, fast, and easy to set up.</p>
+        </div>
+
+        <div class="help-card">
+            <h3>Q: How do I get a free API key?</h3>
+            <p><strong>A:</strong> Go to <a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio</a> and create a free API key for Gemini.</p>
+        </div>
+
+        <div class="help-card">
+            <h3>Q: What's the difference between Gemini and Gemma?</h3>
+            <p><strong>A:</strong></p>
+            <ul>
+                <li><strong>Gemini</strong> = Cloud API (runs on Google's servers, free tier available)</li>
+                <li><strong>Gemma</strong> = Self-hosted (runs on your computer, 100% free but requires installation)</li>
+            </ul>
+        </div>
+
+        <div class="help-card">
+            <h3>Q: Why does my test connection fail?</h3>
+            <p><strong>A:</strong> Common issues:</p>
+            <ul>
+                <li>❌ Wrong API key → Get new one from provider</li>
+                <li>❌ Typo in model name → Check spelling (e.g., <code>gemini-2.5-flash</code> not "flask")</li>
+                <li>❌ For Gemma: Server not running → Start Ollama/LM Studio first</li>
+            </ul>
+        </div>
+
+        <h2>🔗 Useful Links</h2>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin: 20px 0;">
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn">🔑 Get Gemini API Key</a>
+            <a href="https://ollama.com/download" target="_blank" class="btn">📥 Download Ollama</a>
+            <a href="https://lmstudio.ai" target="_blank" class="btn">🖥️ Download LM Studio</a>
+            <a href="https://portal.azure.com" target="_blank" class="btn">☁️ Azure Portal</a>
+        </div>
+
+        <h2>📚 Documentation</h2>
+        
+        <ul>
+            <li><a href="GEMINI_SETUP_GUIDE.md" target="_blank">Complete Gemini Setup Guide</a></li>
+            <li><a href="GEMMA_FREE_SETUP_GUIDE.md" target="_blank">How to Get Free API Access</a></li>
+            <li><a href="REAL_API_VALIDATION.md" target="_blank">API Validation Guide</a></li>
+            <li><a href="MODEL_CONFIG_UPDATE.md" target="_blank">How to Edit Configurations</a></li>
+            <li><a href="GEMINI_2.5_FLASH_FIX.md" target="_blank">Gemini 2.5 Flash Support</a></li>
+        </ul>
+
+        <div style="margin-top: 40px; padding: 20px; background: #e8f5e9; border-radius: 8px; text-align: center;">
+            <h3 style="color: #388e3c; margin-top: 0;">🎉 Ready to Get Started?</h3>
+            <p>The easiest way is to use Gemini with a free API key!</p>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" class="btn btn-secondary">Get Free API Key Now →</a>
+        </div>
+    </div>
+</body>
+</html>
