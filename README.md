@@ -18,11 +18,12 @@ A full-stack web application for submitting and managing innovation ideas with A
 ## Tech Stack
 
 ### Backend
-- **Node.js** with **TypeScript**
-- **Fastify** - Fast web framework
-- **PostgreSQL** - Database
+- **Python 3.11+** with **FastAPI**
+- **PostgreSQL** - Database with integer primary keys
 - **Redis** - Caching (optional)
-- **XLSX** - Excel file processing
+- **Pandas & OpenPyXL** - Excel/CSV file processing
+- **Psycopg2** - PostgreSQL adapter
+- **Uvicorn** - ASGI server
 
 ### Frontend
 - **Vanilla JavaScript** - No framework dependencies
@@ -30,32 +31,32 @@ A full-stack web application for submitting and managing innovation ideas with A
 - **Toast Notifications** - Clean user feedback
 
 ### AI/LLM Support
-- **LiteLLM Integration** - Unified gateway for 100+ providers
+- **LiteLLM** - Unified interface for 100+ LLM providers
 - Azure OpenAI
 - Google Gemini
-- Gemma (local/self-hosted)
-- OpenAI
 - Anthropic Claude
-- And 100+ more via LiteLLM
+- OpenAI
+- And 100+ more providers via LiteLLM
 
 ## Quick Start
 
 ### Prerequisites
-- Node.js 18+
+- Python 3.11+
 - PostgreSQL 14+
-- Redis (optional)
+- Redis (optional, for caching)
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
 git clone <your-repo-url>
-cd model-rubric-idea-submission
+cd innovation-idea-platform
 ```
 
-2. **Install dependencies**
+2. **Install Python dependencies**
 ```bash
-npm install
+cd python_backend
+pip install -r requirements.txt
 ```
 
 3. **Set up environment variables**
@@ -66,12 +67,13 @@ cp .env.example .env
 
 4. **Run database migrations**
 ```bash
-npm run migrate:up
+# Using psql or pgAdmin, run:
+psql -U postgres -d your_database -f migrations/1763200000000_convert-uuid-to-integer-ids.sql
 ```
 
-5. **Start the development server**
+5. **Start the Python backend**
 ```bash
-npm run dev
+python main.py
 ```
 
 6. **Open the application**
@@ -82,43 +84,53 @@ http://localhost:3000
 ## Environment Variables
 
 ```env
-# Database
-DATABASE_URL=postgresql://user:password@localhost:5432/dbname
-
-# Redis (optional)
-REDIS_URL=redis://localhost:6379
-
 # Server
 PORT=3000
 NODE_ENV=development
 
-# AI Models (configure as needed)
-AZURE_OPENAI_API_KEY=your_key
-AZURE_OPENAI_ENDPOINT=your_endpoint
-GEMINI_API_KEY=your_key
+# Database
+DATABASE_URL=postgresql://postgres:password@localhost:5432/postgres
+DATABASE_POOL_SIZE=20
+
+# Redis (optional)
+REDIS_URL=redis://localhost:6379
+
+# File Limits
+MAX_CSV_ROWS=500
+MAX_MP4_SIZE=104857600  # 100MB
+MAX_DOC_SIZE=104857600  # 100MB
+
+# JWT Authentication
+JWT_SECRET=your-secret-key-change-in-production
+JWT_ALGORITHM=HS256
+JWT_EXPIRY_MINUTES=60
 ```
+
+**Note:** LLM API keys are stored in the database per model configuration, not in environment variables.
 
 ## Project Structure
 
 ```
-├── src/
-│   ├── config/          # Configuration files
-│   ├── middleware/      # Auth and other middleware
-│   ├── routes/          # API routes
-│   ├── services/        # Business logic
-│   │   ├── providers/   # AI model adapters
-│   │   ├── CSVProcessor.ts
-│   │   ├── RubricService.ts
-│   │   └── SubmissionService.ts
-│   └── types/           # TypeScript types
-├── public/              # Frontend files
+├── python_backend/          # Python FastAPI backend
+│   ├── config/             # Configuration files
+│   │   ├── database.py     # PostgreSQL connection pooling
+│   │   ├── redis_client.py # Redis caching
+│   │   └── settings.py     # Environment settings
+│   ├── services/           # Business logic
+│   │   ├── llm_service.py  # LiteLLM integration
+│   │   ├── model_config_service.py
+│   │   ├── submission_service.py
+│   │   └── csv_processor.py
+│   ├── models/             # Pydantic models
+│   ├── main.py             # FastAPI application
+│   └── requirements.txt    # Python dependencies
+├── public/                 # Frontend files
 │   ├── index.html
 │   ├── app.js
 │   ├── help.html
 │   └── ideas_template.csv
-├── migrations/          # Database migrations
-└── docs/               # Documentation
-
+├── migrations/             # Database migrations
+└── docs/                   # Documentation
 ```
 
 ## API Endpoints
@@ -187,31 +199,28 @@ Idea Id,Your idea title,Brief summary of your Idea,Challenge/Business opportunit
 
 ### Run in development mode
 ```bash
-npm run dev
+cd python_backend
+python main.py
 ```
 
-### Build for production
+### Production deployment
 ```bash
-npm run build
-npm start
-```
-
-### Run tests
-```bash
-npm test
+cd python_backend
+uvicorn main:app --host 0.0.0.0 --port 3000 --workers 4
 ```
 
 ### Database migrations
 ```bash
-# Create new migration
-npm run migrate:create migration-name
+# Run migrations using psql
+psql -U postgres -d your_database -f migrations/migration-file.sql
 
-# Run migrations
-npm run migrate:up
-
-# Rollback migration
-npm run migrate:down
+# Or use pgAdmin to execute SQL files
 ```
+
+### API Documentation
+Once the server is running, visit:
+- Swagger UI: `http://localhost:3000/docs`
+- ReDoc: `http://localhost:3000/redoc`
 
 ## Features in Detail
 
@@ -254,11 +263,9 @@ npm run migrate:down
 - [Model Configuration](docs/MODEL_CONFIG_GUIDE.md) - AI model setup
 - [Performance Tips](docs/PERFORMANCE_TIPS.md) - Optimization guidelines
 
-### Setup Guides (in `/docs` folder)
-- [LiteLLM Integration](docs/LITELLM_INTEGRATION.md) - **NEW!** Unified LLM gateway setup
-- [Gemini Setup](docs/GEMINI_SETUP_GUIDE.md) - Google Gemini API configuration
-- [Gemma Setup](docs/GEMMA_FREE_SETUP_GUIDE.md) - Local Gemma model setup
-- [Email Setup](docs/EMAIL_SETUP_GUIDE.md) - SendGrid configuration
+### Setup Guides
+- [LiteLLM Integration](python_backend/LITELLM_INTEGRATION.md) - **NEW!** Unified LLM provider integration
+- [Python Backend README](python_backend/README.md) - Backend-specific documentation
 
 ## License
 
