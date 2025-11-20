@@ -646,6 +646,25 @@
 
             <div id="createRubricForm" style="display: none; margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
                 <h3>Create Custom Rubric</h3>
+                
+                <!-- Template Selector -->
+                <div id="templateSelector" style="margin-bottom: 30px;">
+                    <h4 style="margin-bottom: 15px; color: #333;">
+                        💡 Suggested Templates
+                        <span style="font-size: 14px; font-weight: normal; color: #666;">
+                            (Click to use, or create your own below)
+                        </span>
+                    </h4>
+                    <div id="templateCards" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
+                        <!-- Template cards will be rendered here by JavaScript -->
+                    </div>
+                </div>
+
+                <div style="text-align: center; margin: 20px 0; color: #999; font-weight: 600;">
+                    OR CREATE YOUR OWN
+                </div>
+
+                <!-- Manual Input Fields -->
                 <div class="form-group">
                     <label>Rubric Name *</label>
                     <input type="text" id="rubricName" placeholder="e.g., Innovation Score">

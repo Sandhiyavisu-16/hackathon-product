@@ -608,6 +608,171 @@ async def get_rubrics(user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class CreateRubricRequest(BaseModel):
+    name: str
+    description: str
+    guidance: str
+    weight: int
+
+
+@app.post("/api/rubrics")
+async def create_rubric(
+    request: CreateRubricRequest,
+    user=Depends(get_current_user)
+):
+    """Create a custom rubric"""
+    try:
+        from config.database import get_db_connection
+        
+        # Validate weight
+        if request.weight < 0 or request.weight > 100:
+            raise HTTPException(status_code=400, detail="Weight must be between 0 and 100")
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Insert new rubric
+            cursor.execute("""
+                INSERT INTO rubrics (name, description, guidance, weight, is_default, is_active, display_order, created_by)
+                VALUES (%s, %s, %s, %s, false, true, 999, %s)
+                RETURNING id, name, description, guidance, weight, is_default, is_active, display_order, created_at
+            """, (request.name, request.description, request.guidance, request.weight, user['user_id']))
+            
+            row = cursor.fetchone()
+            columns = [desc[0] for desc in cursor.description]
+            conn.commit()
+            cursor.close()
+            
+            rubric = dict(zip(columns, row))
+            if rubric.get('created_at'):
+                rubric['created_at'] = rubric['created_at'].isoformat()
+            
+            return rubric
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error creating rubric: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+class UpdateRubricRequest(BaseModel):
+    weight: Optional[int] = None
+    is_active: Optional[bool] = None
+
+
+@app.patch("/api/rubrics/{rubric_id}")
+async def update_rubric(
+    rubric_id: int,
+    request: UpdateRubricRequest,
+    user=Depends(get_current_user)
+):
+    """Update rubric weight or active status"""
+    try:
+        from config.database import get_db_connection
+        
+        weight = request.weight
+        is_active = request.is_active
+        
+        if weight is not None and (weight < 0 or weight > 100):
+            raise HTTPException(status_code=400, detail="Weight must be between 0 and 100")
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Build update query dynamically
+            updates = []
+            params = []
+            
+            if weight is not None:
+                updates.append("weight = %s")
+                params.append(weight)
+            
+            if is_active is not None:
+                updates.append("is_active = %s")
+                params.append(is_active)
+            
+            if not updates:
+                raise HTTPException(status_code=400, detail="No fields to update")
+            
+            updates.append("updated_at = CURRENT_TIMESTAMP")
+            params.append(rubric_id)
+            
+            query = f"UPDATE rubrics SET {', '.join(updates)} WHERE id = %s RETURNING *"
+            cursor.execute(query, params)
+            
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Rubric not found")
+            
+            columns = [desc[0] for desc in cursor.description]
+            conn.commit()
+            cursor.close()
+            
+            rubric = dict(zip(columns, row))
+            if rubric.get('created_at'):
+                rubric['created_at'] = rubric['created_at'].isoformat()
+            if rubric.get('updated_at'):
+                rubric['updated_at'] = rubric['updated_at'].isoformat()
+            
+            return rubric
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error updating rubric: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.delete("/api/rubrics/{rubric_id}")
+async def delete_rubric(
+    rubric_id: int,
+    user=Depends(get_current_user)
+):
+    """Delete a custom rubric"""
+    try:
+        from config.database import get_db_connection
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            # Check if rubric exists and is not a default rubric
+            cursor.execute("""
+                SELECT id, name, is_default FROM rubrics WHERE id = %s
+            """, (rubric_id,))
+            
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=404, detail="Rubric not found")
+            
+            rubric_id_db, rubric_name, is_default = row
+            
+            if is_default:
+                raise HTTPException(status_code=400, detail="Cannot delete default rubrics")
+            
+            # Delete the rubric
+            cursor.execute("""
+                DELETE FROM rubrics WHERE id = %s
+            """, (rubric_id,))
+            
+            conn.commit()
+            cursor.close()
+            
+            return {
+                'success': True,
+                'message': f'Rubric "{rubric_name}" deleted successfully'
+            }
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error deleting rubric: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Mount static files at the end (after all API routes)
 # This serves files like app.js, index.html, etc. directly
 if public_dir.exists():

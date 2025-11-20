@@ -3,6 +3,45 @@ const API_URL = 'http://localhost:3000';
 let currentToken = null;
 let currentRole = null;
 
+// Rubric Templates
+const RUBRIC_TEMPLATES = [
+    {
+        id: 'innovation',
+        name: 'Innovation Score',
+        description: 'Measures the novelty and creativity of the idea',
+        guidance: 'Score 5 for highly innovative ideas that introduce new concepts, 3 for moderate improvements, 1 for conventional approaches',
+        suggestedWeight: 25
+    },
+    {
+        id: 'feasibility',
+        name: 'Feasibility Assessment',
+        description: 'Evaluates the practicality and implementability of the idea',
+        guidance: 'Score 5 for highly feasible ideas with clear implementation path, 3 for moderately complex, 1 for highly challenging or unclear approaches',
+        suggestedWeight: 20
+    },
+    {
+        id: 'market-potential',
+        name: 'Market Potential',
+        description: 'Assesses the business value and market opportunity',
+        guidance: 'Score 5 for ideas with large market potential and clear revenue model, 3 for moderate market opportunity, 1 for limited or unclear market',
+        suggestedWeight: 20
+    },
+    {
+        id: 'technical-complexity',
+        name: 'Technical Complexity',
+        description: 'Evaluates the technical sophistication and challenges',
+        guidance: 'Score 5 for appropriate technical complexity that adds value, 3 for moderate complexity, 1 for overly simple or unnecessarily complex',
+        suggestedWeight: 15
+    },
+    {
+        id: 'business-value',
+        name: 'Business Value',
+        description: 'Measures the potential impact on business outcomes',
+        guidance: 'Score 5 for high business impact with measurable outcomes, 3 for moderate impact, 1 for limited or unclear business value',
+        suggestedWeight: 20
+    }
+];
+
 // Role Selection
 function selectRole(role) {
     currentRole = role;
@@ -201,6 +240,89 @@ async function loadRubrics() {
     }
 }
 
+// Template Card Rendering
+function renderTemplateCards() {
+    const container = document.getElementById('templateCards');
+    if (!container) return;
+    
+    container.innerHTML = RUBRIC_TEMPLATES.map(template => `
+        <div class="template-card" onclick="selectTemplate('${template.id}')" 
+             style="padding: 15px; border: 2px solid #e0e0e0; border-radius: 8px; cursor: pointer; transition: all 0.2s; background: white;">
+            <div style="font-weight: 600; color: #667eea; margin-bottom: 8px; font-size: 16px;">
+                ${template.name}
+            </div>
+            <div style="font-size: 13px; color: #666; line-height: 1.4;">
+                ${template.description}
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; color: #999;">
+                Suggested weight: ${template.suggestedWeight}%
+            </div>
+        </div>
+    `).join('');
+}
+
+function addTemplateCardStyles() {
+    // Check if styles already added
+    if (document.getElementById('template-card-styles')) return;
+    
+    const style = document.createElement('style');
+    style.id = 'template-card-styles';
+    style.textContent = `
+        .template-card:hover {
+            border-color: #667eea !important;
+            background: #f0f4ff !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
+        }
+        .template-card.selected {
+            border-color: #667eea !important;
+            background: #e3f2fd !important;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Template Selection Logic
+function selectTemplate(templateId) {
+    const template = RUBRIC_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return;
+    
+    // Check if user has already entered data
+    const hasManualInput = 
+        document.getElementById('rubricName').value.trim() ||
+        document.getElementById('rubricDescription').value.trim() ||
+        document.getElementById('rubricGuidance').value.trim();
+    
+    if (hasManualInput) {
+        if (!confirm('This will replace your current input. Continue?')) {
+            return;
+        }
+    }
+    
+    // Populate form fields
+    document.getElementById('rubricName').value = template.name;
+    document.getElementById('rubricDescription').value = template.description;
+    document.getElementById('rubricGuidance').value = template.guidance;
+    document.getElementById('rubricWeight').value = template.suggestedWeight;
+    
+    // Visual feedback
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    event.target.closest('.template-card').classList.add('selected');
+    
+    // Scroll to form fields
+    document.getElementById('rubricName').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    document.getElementById('rubricName').focus();
+}
+
+function clearTemplateSelection() {
+    document.querySelectorAll('.template-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+}
+
 // Show/Hide Create Rubric Form
 function showCreateRubricForm() {
     if (currentRole !== 'admin') {
@@ -208,10 +330,13 @@ function showCreateRubricForm() {
         return;
     }
     document.getElementById('createRubricForm').style.display = 'block';
+    renderTemplateCards();
+    addTemplateCardStyles();
 }
 
 function hideCreateRubricForm() {
     document.getElementById('createRubricForm').style.display = 'none';
+    clearTemplateSelection();
     // Clear form
     document.getElementById('rubricName').value = '';
     document.getElementById('rubricDescription').value = '';
@@ -328,12 +453,19 @@ async function deleteRubric(rubricId, rubricName) {
     }
     
     try {
-        // Note: Delete endpoint not implemented yet, but UI is ready
-        alert('Delete functionality will be available once the DELETE endpoint is implemented in the backend.');
+        document.getElementById('rubricsError').style.display = 'none';
+        document.getElementById('rubricsSuccess').style.display = 'none';
         
-        // When implemented, it would be:
-        // await apiCall(`/api/rubrics/${rubricId}`, { method: 'DELETE' });
-        // loadRubrics();
+        await apiCall(`/api/rubrics/${rubricId}`, { method: 'DELETE' });
+        
+        document.getElementById('rubricsSuccess').style.display = 'block';
+        document.getElementById('rubricsSuccess').textContent = `✅ Rubric "${rubricName}" deleted successfully!`;
+        
+        loadRubrics();
+        
+        setTimeout(() => {
+            document.getElementById('rubricsSuccess').style.display = 'none';
+        }, 3000);
         
     } catch (error) {
         document.getElementById('rubricsError').style.display = 'block';
