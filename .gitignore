@@ -52,3 +52,26 @@ node_modules/
 # Temporary files
 *.tmp
 *.bak
+
+# Evaluation Pipeline - Helper/Debug Scripts (don't push)
+python_backend/test_pipeline.py
+python_backend/check_status.py
+python_backend/debug_query.py
+python_backend/reset_classification.py
+python_backend/setup_database.py
+setup_database.bat
+
+# Evaluation Pipeline - Documentation (optional, don't push)
+EVALUATION_PIPELINE_GUIDE.md
+EVALUATION_PIPELINE_COMPLETE.md
+QUICK_START.md
+
+# Spec files (optional, don't push)
+.kiro/specs/evaluation-pipeline-integration/CRITICAL_NEXT_STEPS.md
+.kiro/specs/evaluation-pipeline-integration/COMPLETION_SUMMARY.md
+.kiro/specs/evaluation-pipeline-integration/FINAL_STATUS.md
+.kiro/specs/evaluation-pipeline-integration/IMPLEMENTATION_STATUS.md
+.kiro/specs/evaluation-pipeline-integration/FINAL_COMPLETION.md
+
+# Data directory (uploaded files, don't push)
+data/additional_files/

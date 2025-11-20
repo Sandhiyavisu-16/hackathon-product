@@ -626,6 +626,7 @@
             <button id="rubricsTab" class="tab active" onclick="showTab('rubrics')">📊 Rubrics</button>
             <button id="modelsTab" class="tab" onclick="showTab('models')">🤖 Model Config</button>
             <button id="ideasTab" class="tab" onclick="showTab('ideas')">💡 Submit Ideas</button>
+            <button id="evaluationTab" class="tab" onclick="showTab('evaluation')" style="display: none;">🎯 Evaluation</button>
         </div>
 
         <!-- Rubrics Tab -->
@@ -1046,6 +1047,86 @@
                 <h3>📋 Your Submissions</h3>
                 <div id="submissionsLoading" style="display: none;">Loading submissions...</div>
                 <div id="submissionsList"></div>
+            </div>
+        </div>
+
+        <!-- Evaluation Tab -->
+        <div id="evaluation" class="content">
+            <h2>🎯 AI Evaluation Pipeline</h2>
+            <div id="evaluationError" class="error" style="display: none;"></div>
+            <div id="evaluationSuccess" class="success" style="display: none;"></div>
+            
+            <!-- Pipeline Info -->
+            <div style="background: #e3f2fd; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <h3 style="margin-top: 0; color: #1976d2;">📋 What This Does</h3>
+                <p style="margin: 10px 0; line-height: 1.6;">
+                    The evaluation pipeline automatically processes all submitted ideas through three stages:
+                </p>
+                <ol style="margin: 10px 0 10px 20px; line-height: 1.8;">
+                    <li><strong>Extraction:</strong> Extracts content from uploaded files (PDF, PPTX, DOCX, videos, images)</li>
+                    <li><strong>Classification:</strong> Categorizes ideas into themes and industries using AI</li>
+                    <li><strong>Evaluation:</strong> Scores ideas against your custom rubrics and generates recommendations</li>
+                </ol>
+                <p style="margin: 10px 0; color: #666;">
+                    ⏱️ Processing time: ~45-85 seconds per idea | 100 ideas in ~10-15 minutes
+                </p>
+            </div>
+
+            <!-- Pipeline Status Card -->
+            <div style="background: white; border: 2px solid #e0e0e0; border-radius: 12px; padding: 25px; margin-bottom: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Pipeline Status</h3>
+                    <div id="pipelineStatusIndicator" style="display: flex; align-items: center; gap: 8px;">
+                        <span class="status-indicator status-offline"></span>
+                        <span style="font-weight: 600; color: #666;">Idle</span>
+                    </div>
+                </div>
+
+                <div id="pipelineStatus" style="margin-bottom: 20px;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Current Stage</div>
+                            <div id="currentStage" style="font-size: 18px; font-weight: 600; color: #333;">-</div>
+                        </div>
+                        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Progress</div>
+                            <div id="currentProgress" style="font-size: 18px; font-weight: 600; color: #667eea;">0%</div>
+                        </div>
+                        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Completed</div>
+                            <div id="completedCount" style="font-size: 18px; font-weight: 600; color: #4caf50;">0</div>
+                        </div>
+                        <div style="background: #f9f9f9; padding: 15px; border-radius: 8px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Failed</div>
+                            <div id="failedCount" style="font-size: 18px; font-weight: 600; color: #f44336;">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="progressBarContainer" style="display: none; margin-bottom: 20px;">
+                    <div style="background: #e0e0e0; height: 8px; border-radius: 4px; overflow: hidden;">
+                        <div id="progressBar" style="background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                    <div id="progressMessage" style="margin-top: 8px; font-size: 14px; color: #666; text-align: center;"></div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 10px;">
+                    <button id="startEvaluationBtn" class="btn" onclick="startEvaluation()" style="flex: 1;">
+                        🚀 Start Evaluation Pipeline
+                    </button>
+                    <button id="refreshStatusBtn" class="btn" onclick="refreshEvaluationStatus()" style="background: #999;">
+                        🔄 Refresh Status
+                    </button>
+                </div>
+            </div>
+
+            <!-- Evaluation Results -->
+            <div id="evaluationResults" style="display: none;">
+                <h3>📊 Evaluation Results</h3>
+                <div id="resultsStats" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-bottom: 20px;"></div>
+                <div id="resultsTable"></div>
             </div>
         </div>
     </div>

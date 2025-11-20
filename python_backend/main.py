@@ -773,6 +773,54 @@ async def delete_rubric(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ============================================================================
+# EVALUATION PIPELINE ROUTES
+# ============================================================================
+
+from services.evaluation_service import evaluation_service
+
+
+@app.post("/api/evaluation/start")
+async def start_evaluation_pipeline(user=Depends(get_current_user)):
+    """Start the evaluation pipeline for pending ideas"""
+    if user['role'] != 'admin':
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    try:
+        result = await evaluation_service.start_pipeline()
+        return result
+    except Exception as e:
+        print(f"Error starting evaluation pipeline: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/evaluation/status")
+async def get_evaluation_status(user=Depends(get_current_user)):
+    """Get current pipeline status and progress"""
+    try:
+        return await evaluation_service.get_status()
+    except Exception as e:
+        print(f"Error getting evaluation status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/ideas/{idea_id}/scores")
+async def get_idea_scores(idea_id: int, user=Depends(get_current_user)):
+    """Get evaluation scores and results for a specific idea"""
+    try:
+        result = await evaluation_service.get_idea_scores(idea_id)
+        if 'error' in result:
+            raise HTTPException(status_code=404, detail=result['error'])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Error getting idea scores: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # Mount static files at the end (after all API routes)
 # This serves files like app.js, index.html, etc. directly
 if public_dir.exists():

@@ -172,17 +172,19 @@ class SubmissionService:
             
             for row in batch:
                 cursor.execute("""
-                    INSERT INTO ideas (
-                        submission_id, title, brief_summary, challenge_opportunity,
-                        novelty_benefits_risks, responsible_ai_adherence, additional_documentation,
-                        supporting_artefacts, second_file_upload, preferred_week, build_phase_preference,
-                        build_preference, code_development_preference, submitter_email
+                    INSERT INTO hackathon_ideas (
+                        submission_id, idea_title, brief_summary, detailed_description,
+                        challenge_opportunity, novelty_benefits_risks, responsible_ai_adherence, 
+                        additional_documentation, supporting_artefacts, second_file_upload, 
+                        preferred_week, build_phase_preference, build_preference, 
+                        code_development_preference, submitter_email
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """, (
                     submission_id,
                     row.get('your idea title', ''),
                     row.get('brief summary of your idea', ''),
+                    row.get('brief summary of your idea', ''),  # detailed_description (same as brief for now)
                     row.get('challenge/business opportunity being addressed and the ability to scale it across tcs and multiple customers.'),
                     row.get('novelty of the idea, benefits and risks.'),
                     row.get('highlight adherence to responsible ai principles such as security, fairness, privacy & legal compliance.'),
@@ -243,18 +245,20 @@ class SubmissionService:
                 
                 # Insert idea
                 cursor.execute("""
-                    INSERT INTO ideas (
-                        submission_id, title, brief_summary, challenge_opportunity,
-                        novelty_benefits_risks, responsible_ai_adherence, additional_documentation,
-                        supporting_artefacts, second_file_upload, preferred_week, build_phase_preference,
-                        build_preference, code_development_preference, submitter_email
+                    INSERT INTO hackathon_ideas (
+                        submission_id, idea_title, brief_summary, detailed_description,
+                        challenge_opportunity, novelty_benefits_risks, responsible_ai_adherence, 
+                        additional_documentation, supporting_artefacts, second_file_upload, 
+                        preferred_week, build_phase_preference, build_preference, 
+                        code_development_preference, submitter_email
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     RETURNING id
                 """, (
                     submission_id,
                     idea_data['title'],
                     idea_data['brief_summary'],
+                    idea_data['brief_summary'],  # detailed_description
                     idea_data.get('challenge_opportunity'),
                     idea_data.get('novelty_benefits_risks'),
                     idea_data.get('responsible_ai_adherence'),
@@ -293,8 +297,8 @@ class SubmissionService:
                     i.*,
                     s.submitter_id,
                     s.created_at as submission_date
-                FROM ideas i
-                JOIN idea_submissions s ON i.submission_id = s.id
+                FROM hackathon_ideas i
+                LEFT JOIN idea_submissions s ON i.submission_id = s.id
                 ORDER BY i.created_at DESC
                 LIMIT 1000
             """)

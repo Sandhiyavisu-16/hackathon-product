@@ -59,6 +59,7 @@ function selectRole(role) {
     const rubricsTab = document.getElementById('rubricsTab');
     const modelsTab = document.getElementById('modelsTab');
     const ideasTab = document.getElementById('ideasTab');
+    const evaluationTab = document.getElementById('evaluationTab');
     
     // Show/hide buttons and set default view based on role
     const singleModeBtn = document.getElementById('singleModeBtn');
@@ -70,6 +71,7 @@ function selectRole(role) {
         if (rubricsTab) rubricsTab.style.display = 'inline-block';
         if (modelsTab) modelsTab.style.display = 'inline-block';
         if (ideasTab) ideasTab.style.display = 'inline-block';
+        if (evaluationTab) evaluationTab.style.display = 'inline-block';
         
         // Admin: Show bulk upload and all ideas, hide single idea
         if (singleModeBtn) singleModeBtn.style.display = 'none';
@@ -83,6 +85,7 @@ function selectRole(role) {
         if (rubricsTab) rubricsTab.style.display = 'none';
         if (modelsTab) modelsTab.style.display = 'none';
         if (ideasTab) ideasTab.style.display = 'inline-block';
+        if (evaluationTab) evaluationTab.style.display = 'none';
         
         // Contributor: Show only single idea, hide others
         if (singleModeBtn) singleModeBtn.style.display = 'block';
@@ -1757,3 +1760,286 @@ document.addEventListener('keydown', function(event) {
         closeIdeaModal();
     }
 });
+
+// ============================================================================
+// EVALUATION PIPELINE FUNCTIONS
+// ============================================================================
+
+let evaluationStatusInterval = null;
+
+// Start evaluation pipeline
+async function startEvaluation() {
+    const btn = document.getElementById('startEvaluationBtn');
+    const errorDiv = document.getElementById('evaluationError');
+    const successDiv = document.getElementById('evaluationSuccess');
+    
+    // Clear previous messages
+    errorDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+    
+    // Disable button
+    btn.disabled = true;
+    btn.textContent = '⏳ Starting Pipeline...';
+    
+    try {
+        const response = await fetch(`${API_URL}/api/evaluation/start`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${currentToken}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            successDiv.textContent = '✅ Evaluation pipeline started successfully!';
+            successDiv.style.display = 'block';
+            
+            // Start polling for status
+            startStatusPolling();
+            
+            showToast('Pipeline Started', 'Evaluation pipeline is now running', 'success');
+        } else {
+            throw new Error(data.error || 'Failed to start pipeline');
+        }
+    } catch (error) {
+        console.error('Error starting evaluation:', error);
+        errorDiv.textContent = `❌ Error: ${error.message}`;
+        errorDiv.style.display = 'block';
+        
+        btn.disabled = false;
+        btn.textContent = '🚀 Start Evaluation Pipeline';
+        
+        showToast('Error', error.message, 'error');
+    }
+}
+
+// Refresh evaluation status
+async function refreshEvaluationStatus() {
+    try {
+        const response = await fetch(`${API_URL}/api/evaluation/status`, {
+            headers: {
+                'Authorization': `Bearer ${currentToken}`
+            }
+        });
+        
+        const status = await response.json();
+        updateEvaluationUI(status);
+        
+        showToast('Status Updated', 'Evaluation status refreshed', 'info');
+    } catch (error) {
+        console.error('Error refreshing status:', error);
+        showToast('Error', 'Failed to refresh status', 'error');
+    }
+}
+
+// Start polling for status updates
+function startStatusPolling() {
+    // Clear any existing interval
+    if (evaluationStatusInterval) {
+        clearInterval(evaluationStatusInterval);
+    }
+    
+    // Poll every 3 seconds
+    evaluationStatusInterval = setInterval(async () => {
+        try {
+            const response = await fetch(`${API_URL}/api/evaluation/status`, {
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            });
+            
+            const status = await response.json();
+            updateEvaluationUI(status);
+            
+            // Stop polling if pipeline is complete or failed
+            if (!status.running) {
+                clearInterval(evaluationStatusInterval);
+                evaluationStatusInterval = null;
+                
+                // Re-enable start button
+                const btn = document.getElementById('startEvaluationBtn');
+                btn.disabled = false;
+                btn.textContent = '🚀 Start Evaluation Pipeline';
+                
+                if (status.stage === 'completed') {
+                    showToast('Pipeline Complete', 'Evaluation pipeline finished successfully!', 'success');
+                } else if (status.stage === 'failed') {
+                    showToast('Pipeline Failed', 'Evaluation pipeline encountered an error', 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error polling status:', error);
+        }
+    }, 3000);
+}
+
+// Update evaluation UI with status
+function updateEvaluationUI(status) {
+    // Update status indicator
+    const indicator = document.getElementById('pipelineStatusIndicator');
+    if (status.running) {
+        indicator.innerHTML = `
+            <span class="status-indicator status-online"></span>
+            <span style="font-weight: 600; color: #4caf50;">Running</span>
+        `;
+    } else {
+        indicator.innerHTML = `
+            <span class="status-indicator status-offline"></span>
+            <span style="font-weight: 600; color: #666;">Idle</span>
+        `;
+    }
+    
+    // Update stage
+    const stageText = status.stage ? status.stage.charAt(0).toUpperCase() + status.stage.slice(1) : '-';
+    document.getElementById('currentStage').textContent = stageText;
+    
+    // Update progress
+    document.getElementById('currentProgress').textContent = `${status.progress || 0}%`;
+    document.getElementById('completedCount').textContent = status.completed || 0;
+    document.getElementById('failedCount').textContent = status.failed || 0;
+    
+    // Update progress bar
+    const progressBarContainer = document.getElementById('progressBarContainer');
+    const progressBar = document.getElementById('progressBar');
+    
+    if (status.running && status.progress > 0) {
+        progressBarContainer.style.display = 'block';
+        progressBar.style.width = `${status.progress}%`;
+    } else {
+        progressBarContainer.style.display = 'none';
+    }
+}
+
+// Display evaluation results for an idea
+async function displayIdeaScores(ideaId) {
+    try {
+        const response = await fetch(`${API_URL}/api/ideas/${ideaId}/scores`, {
+            headers: {
+                'Authorization': `Bearer ${currentToken}`
+            }
+        });
+        
+        const scores = await response.json();
+        
+        if (scores.error) {
+            showToast('Error', scores.error, 'error');
+            return;
+        }
+        
+        // Create modal content
+        let modalContent = `
+            <div class="modal-header">
+                <h2>📊 Evaluation Results - Idea #${ideaId}</h2>
+            </div>
+        `;
+        
+        // Overall Score
+        if (scores.weighted_total_score) {
+            const scoreColor = scores.weighted_total_score >= 7.5 ? '#4caf50' : 
+                              scores.weighted_total_score >= 5.5 ? '#ff9800' : '#f44336';
+            modalContent += `
+                <div style="text-align: center; padding: 20px; background: #f9f9f9; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-size: 14px; color: #666; margin-bottom: 5px;">Weighted Total Score</div>
+                    <div style="font-size: 48px; font-weight: 700; color: ${scoreColor};">
+                        ${scores.weighted_total_score.toFixed(2)}/10
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Investment Recommendation
+        if (scores.investment_recommendation) {
+            const recBadge = scores.investment_recommendation === 'go' ? 
+                '<span style="background: #4caf50; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600;">✅ GO</span>' :
+                scores.investment_recommendation === 'consider-with-mitigations' ?
+                '<span style="background: #ff9800; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600;">⚠️ CONSIDER</span>' :
+                '<span style="background: #f44336; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600;">❌ NO-GO</span>';
+            
+            modalContent += `
+                <div class="modal-section">
+                    <h3>Investment Recommendation</h3>
+                    <div style="text-align: center; padding: 10px;">
+                        ${recBadge}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Classification
+        if (scores.primary_theme || scores.industry) {
+            modalContent += `<div class="modal-section"><h3>Classification</h3>`;
+            if (scores.primary_theme) {
+                modalContent += `<p><strong>Primary Theme:</strong> ${scores.primary_theme}</p>`;
+            }
+            if (scores.secondary_themes && scores.secondary_themes.length > 0) {
+                modalContent += `<p><strong>Secondary Themes:</strong> ${scores.secondary_themes.join(', ')}</p>`;
+            }
+            if (scores.industry) {
+                modalContent += `<p><strong>Industry:</strong> ${scores.industry}</p>`;
+            }
+            if (scores.technologies && scores.technologies.length > 0) {
+                modalContent += `<p><strong>Technologies:</strong> ${scores.technologies.join(', ')}</p>`;
+            }
+            modalContent += `</div>`;
+        }
+        
+        // Rubric Scores
+        if (scores.rubric_scores) {
+            modalContent += `<div class="modal-section"><h3>Rubric Scores</h3>`;
+            for (const [rubric, score] of Object.entries(scores.rubric_scores)) {
+                const scoreColor = score >= 7.5 ? '#4caf50' : score >= 5.5 ? '#ff9800' : '#f44336';
+                modalContent += `
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: white; border-radius: 4px; margin-bottom: 8px;">
+                        <span style="font-weight: 600;">${rubric}</span>
+                        <span style="font-size: 18px; font-weight: 700; color: ${scoreColor};">${score.toFixed(1)}/10</span>
+                    </div>
+                `;
+            }
+            modalContent += `</div>`;
+        }
+        
+        // Key Strengths
+        if (scores.key_strengths && scores.key_strengths.length > 0) {
+            modalContent += `
+                <div class="modal-section">
+                    <h3>✅ Key Strengths</h3>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        ${scores.key_strengths.map(s => `<li style="margin: 5px 0;">${s}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // Key Concerns
+        if (scores.key_concerns && scores.key_concerns.length > 0) {
+            modalContent += `
+                <div class="modal-section">
+                    <h3>⚠️ Key Concerns</h3>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        ${scores.key_concerns.map(c => `<li style="margin: 5px 0;">${c}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // Processing Status
+        modalContent += `
+            <div class="modal-section" style="background: #f0f0f0;">
+                <h3>Processing Status</h3>
+                <p><strong>Extraction:</strong> ${scores.extraction_status || 'pending'}</p>
+                <p><strong>Classification:</strong> ${scores.classification_status || 'pending'}</p>
+                <p><strong>Evaluation:</strong> ${scores.evaluation_status || 'pending'}</p>
+            </div>
+        `;
+        
+        // Show modal
+        document.getElementById('ideaModalContent').innerHTML = modalContent;
+        document.getElementById('ideaModal').classList.add('show');
+        
+    } catch (error) {
+        console.error('Error loading idea scores:', error);
+        showToast('Error', 'Failed to load evaluation scores', 'error');
+    }
+}

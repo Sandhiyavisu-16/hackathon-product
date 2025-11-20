@@ -54,6 +54,18 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_expiry_minutes: int = 60
     
+    # Evaluation Pipeline
+    evaluation_batch_size: int = 8
+    max_file_workers: int = 3
+    max_retries: int = 3
+    evaluation_timeout: int = 120
+    gemini_api_key: str | None = None
+    
+    # Supported file extensions for extraction
+    @property
+    def supported_file_extensions(self) -> list:
+        return ['.pdf', '.pptx', '.docx', '.mp4', '.mov', '.avi', '.jpg', '.jpeg', '.png', '.webp']
+    
     class Config:
         env_file = ".env"
         case_sensitive = False
