@@ -19,31 +19,50 @@ class PipelineOrchestrator:
     def __init__(
         self,
         db_manager: DatabaseManager,
-        file_extractor: FileExtractor,
+        file_extractor: Optional[FileExtractor],
         batch_size: int = 8,
         max_workers: int = 8,
-        progress_callback: Optional[Callable] = None
+        progress_callback: Optional[Callable] = None,
+        provider: Optional[str] = None,
+        model_name: Optional[str] = None,
+        model_settings: Optional[Dict[str, Any]] = None
     ):
         """
         Initialize pipeline orchestrator
         
         Args:
             db_manager: Database manager instance
-            file_extractor: File extractor instance
+            file_extractor: File extractor instance (optional, for vision tasks)
             batch_size: Number of ideas to process in parallel
             max_workers: Maximum number of worker threads
             progress_callback: Optional callback for progress updates
+            provider: LLM provider (gemini, azure_openai, openai, etc.)
+            model_name: Model name to use
+            model_settings: Model configuration settings (api_key, endpoint, etc.)
         """
         self.db_manager = db_manager
         self.file_extractor = file_extractor
         self.batch_size = batch_size
         self.max_workers = max_workers
         self.progress_callback = progress_callback
+        self.provider = provider
+        self.model_name = model_name
+        self.model_settings = model_settings or {}
         
         # Initialize pipelines
-        self.content_processor = ContentProcessor(file_extractor)
-        self.classification_pipeline = ClassificationPipeline(db_manager)
-        self.evaluation_pipeline = EvaluationPipeline(db_manager)
+        self.content_processor = ContentProcessor(file_extractor) if file_extractor else None
+        self.classification_pipeline = ClassificationPipeline(
+            db_manager, 
+            provider=provider, 
+            model_name=model_name,
+            model_settings=model_settings
+        )
+        self.evaluation_pipeline = EvaluationPipeline(
+            db_manager, 
+            provider=provider, 
+            model_name=model_name,
+            model_settings=model_settings
+        )
     
     def run_full_pipeline(self) -> Dict[str, Any]:
         """

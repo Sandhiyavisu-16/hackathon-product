@@ -3,6 +3,7 @@ Classification Pipeline - Classifies ideas into themes and industries
 """
 from typing import Dict, Any, Optional, Callable
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from services.classification.tcs_classifier import TCSClassifier
 from services.database.db_manager import DatabaseManager
@@ -13,16 +14,28 @@ logger = logging.getLogger(__name__)
 class ClassificationPipeline:
     """Pipeline for classifying hackathon ideas"""
     
-    def __init__(self, db_manager: DatabaseManager, api_key: Optional[str] = None):
+    def __init__(
+        self, 
+        db_manager: DatabaseManager, 
+        provider: Optional[str] = None, 
+        model_name: Optional[str] = None,
+        model_settings: Optional[Dict[str, Any]] = None
+    ):
         """
         Initialize classification pipeline
         
         Args:
             db_manager: Database manager instance
-            api_key: Optional Gemini API key
+            provider: LLM provider
+            model_name: Model name to use
+            model_settings: Model configuration settings
         """
         self.db_manager = db_manager
-        self.classifier = TCSClassifier(api_key=api_key)
+        self.classifier = TCSClassifier(
+            provider=provider, 
+            model_name=model_name,
+            model_settings=model_settings
+        )
     
     def run(
         self,
@@ -87,23 +100,39 @@ class ClassificationPipeline:
         }
     
     def _classify_idea(self, idea: Dict[str, Any]) -> Dict[str, Any]:
-        """Classify a single idea"""
+        """Classify a single idea with retry logic for rate limits"""
         idea_id = str(idea['id'])
+        max_retries = 3
         
-        try:
-            logger.info(f"Classifying idea {idea_id}")
-            
-            # Classify the idea
-            classification = self.classifier.classify_idea(idea)
-            
-            # Update database
-            self.db_manager.update_classification(idea_id, classification)
-            
-            logger.info(f"Classification succeeded for idea {idea_id}: {classification['primary_theme']}")
-            return {'success': True}
-            
-        except Exception as e:
-            logger.error(f"Classification error for idea {idea_id}: {e}")
-            # Mark as failed
-            self.db_manager.update_status(idea_id, 'classification_status', 'failed')
-            return {'success': False, 'error': str(e)}
+        for attempt in range(max_retries):
+            try:
+                logger.info(f"Classifying idea {idea_id} (attempt {attempt + 1}/{max_retries})")
+                
+                # Classify the idea
+                classification = self.classifier.classify_idea(idea)
+                
+                # Update database
+                self.db_manager.update_classification(idea_id, classification)
+                
+                logger.info(f"Classification succeeded for idea {idea_id}: {classification['primary_theme']}")
+                return {'success': True}
+                
+            except Exception as e:
+                error_str = str(e)
+                
+                # Check if it's a rate limit error (429)
+                if '429' in error_str or 'quota' in error_str.lower() or 'rate limit' in error_str.lower():
+                    if attempt < max_retries - 1:
+                        # Wait before retrying (exponential backoff)
+                        wait_time = (attempt + 1) * 5  # 5, 10, 15 seconds
+                        logger.warning(f"Rate limit hit for idea {idea_id}, waiting {wait_time}s before retry...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Rate limit exceeded for idea {idea_id} after {max_retries} attempts")
+                else:
+                    logger.error(f"Classification error for idea {idea_id}: {e}")
+                
+                # Mark as failed
+                self.db_manager.update_status(idea_id, 'classification_status', 'failed')
+                return {'success': False, 'error': error_str}

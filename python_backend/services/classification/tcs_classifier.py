@@ -1,11 +1,12 @@
 """
 TCS Classifier - Classifies hackathon ideas into themes and industries
 """
-import google.generativeai as genai
 from typing import Dict, List, Any, Optional
 import logging
 import json
+import asyncio
 from .theme_definitions import THEME_TAXONOMY
+from services.llm_service import llm_service
 
 logger = logging.getLogger(__name__)
 
@@ -13,32 +14,35 @@ logger = logging.getLogger(__name__)
 class TCSClassifier:
     """Classifies ideas into TCS themes, industries, and technologies"""
     
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(
+        self, 
+        provider: Optional[str] = None, 
+        model_name: Optional[str] = None,
+        model_settings: Optional[Dict[str, Any]] = None
+    ):
         """
-        Initialize classifier with Gemini API
+        Initialize classifier with LLM service
         
         Args:
-            api_key: Optional Gemini API key. If not provided, will try to fetch from model config
+            provider: LLM provider (gemini, azure_openai, openai, etc.)
+            model_name: Model name to use
+            model_settings: Model configuration settings (api_key, endpoint, etc.)
         """
-        self.api_key = api_key
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
-        self.model = None
+        self.provider = provider or 'gemini'
+        self.model_name = model_name or 'gemini-2.0-flash-exp'
+        self.model_settings = model_settings or {}
         
     def _ensure_configured(self):
-        """Ensure Gemini is configured with API key"""
-        if not self.api_key:
+        """Validate configuration"""
+        if not self.model_settings.get('api_key'):
             # Fall back to environment variable
             import os
-            self.api_key = os.getenv('GEMINI_API_KEY')
-            if self.api_key:
-                genai.configure(api_key=self.api_key)
+            api_key = os.getenv('GEMINI_API_KEY')
+            if api_key:
+                self.model_settings['api_key'] = api_key
                 logger.info("Using API key from environment variable")
             else:
-                raise ValueError("No Gemini API key available. Set GEMINI_API_KEY in .env file")
-        
-        if not self.model:
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+                raise ValueError("No API key available. Configure model settings or set GEMINI_API_KEY in .env file")
     
     def classify_idea(self, idea_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -78,10 +82,30 @@ class TCSClassifier:
         
         try:
             logger.info(f"Classifying idea: {idea_data.get('idea_title', 'Unknown')}")
-            response = self.model.generate_content(prompt)
+            
+            # Use LLM service for classification
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                response = loop.run_until_complete(
+                    llm_service.chat_completion(
+                        provider=self.provider,
+                        model_name=self.model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        settings=self.model_settings,
+                        temperature=0.3,
+                        max_tokens=1000
+                    )
+                )
+            finally:
+                loop.close()
+            
+            if not response.get('success'):
+                raise Exception(response.get('error', 'Unknown error'))
             
             # Parse response
-            result = self._parse_classification_response(response.text)
+            response_text = response['choices'][0]['message']['content']
+            result = self._parse_classification_response(response_text)
             logger.info(f"Classification complete: {result.get('primary_theme')}")
             
             return result

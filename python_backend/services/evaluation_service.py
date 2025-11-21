@@ -21,28 +21,60 @@ class EvaluationService:
             'failed': 0
         }
     
-    async def get_gemini_api_key(self):
-        """Get Gemini API key from model config or environment"""
+    async def get_evaluation_model_config(self):
+        """Get model configuration for evaluation purpose"""
         from services.model_config_service import model_config_service
         from config.settings import get_settings
+        from config.database import get_db_connection
         
         settings = get_settings()
         
-        # Try to get from active model config
+        # Try to get active config for evaluation purpose
         try:
-            config = await model_config_service.get_active_config()
-            if config and config['provider'] == 'gemini':
-                api_key = config['settings'].get('api_key')
-                if api_key:
-                    return api_key
+            with get_db_connection() as conn:
+                cursor = conn.cursor()
+                cursor.execute("""
+                    SELECT * FROM model_provider_configs
+                    WHERE is_active = true AND purpose = 'evaluation'
+                    LIMIT 1
+                """)
+                row = cursor.fetchone()
+                
+                if row:
+                    columns = [desc[0] for desc in cursor.description]
+                    config = dict(zip(columns, row))
+                    cursor.close()
+                    
+                    # Parse JSON settings
+                    import json
+                    if isinstance(config.get('settings'), str):
+                        config['settings'] = json.loads(config['settings'])
+                    
+                    logger.info(f"Found evaluation config: {config.get('name')}")
+                    logger.info(f"Provider: {config.get('provider')}")
+                    logger.info(f"Config settings keys: {list(config['settings'].keys())}")
+                    
+                    # Return full config for LLM service
+                    return {
+                        'provider': config.get('provider'),
+                        'model_name': config['settings'].get('model_name') or config['settings'].get('model', 'gemini-2.0-flash-exp'),
+                        'settings': config['settings']
+                    }
+                
+                cursor.close()
         except Exception as e:
-            logger.warning(f"Could not get API key from model config: {e}")
+            logger.warning(f"Could not get evaluation model config: {e}")
         
-        # Fallback to environment variable
+        # Fallback to environment variable (Gemini)
         if settings.gemini_api_key:
-            return settings.gemini_api_key
+            logger.info("Using Gemini API key from environment variable")
+            return {
+                'provider': 'gemini',
+                'model_name': 'gemini-2.0-flash-exp',
+                'settings': {'api_key': settings.gemini_api_key}
+            }
         
-        raise ValueError("No Gemini API key configured. Please set up a Gemini model configuration or set GEMINI_API_KEY environment variable.")
+        raise ValueError("No model configuration found for evaluation. Please activate a model config with purpose='evaluation' or set GEMINI_API_KEY environment variable.")
     
     def _update_progress(self, progress_data: Dict):
         """Update progress from pipeline callback"""
@@ -66,11 +98,18 @@ class EvaluationService:
             
             settings = get_settings()
             
-            # Get API key
-            api_key = await self.get_gemini_api_key()
+            # Get model config for evaluation
+            model_config = await self.get_evaluation_model_config()
+            provider = model_config['provider']
+            model_name = model_config['model_name']
+            model_settings = model_config['settings']
+            
+            logger.info(f"Starting pipeline with provider: {provider}, model: {model_name}")
             
             # Initialize components
-            file_extractor = FileExtractor(api_key)
+            # Note: FileExtractor still uses Gemini directly for vision tasks
+            api_key = model_settings.get('api_key', '')
+            file_extractor = FileExtractor(api_key, model=model_name) if api_key else None
             db_manager = DatabaseManager('hackathon_ideas')
             
             # Initialize orchestrator
@@ -79,7 +118,10 @@ class EvaluationService:
                 file_extractor=file_extractor,
                 batch_size=settings.evaluation_batch_size,
                 max_workers=settings.evaluation_batch_size,
-                progress_callback=self._update_progress
+                progress_callback=self._update_progress,
+                provider=provider,
+                model_name=model_name,
+                model_settings=model_settings
             )
             
             # Run full pipeline
@@ -88,14 +130,17 @@ class EvaluationService:
             
             self.status['running'] = False
             self.status['stage'] = 'completed'
-            self.status['completed'] = (
-                stats['extraction']['succeeded'] +
-                stats['classification']['succeeded'] +
+            # Show number of ideas processed (not total tasks)
+            # Use the max of succeeded counts since each idea goes through all stages
+            self.status['completed'] = max(
+                stats['extraction']['succeeded'],
+                stats['classification']['succeeded'],
                 stats['evaluation']['succeeded']
             )
-            self.status['failed'] = (
-                stats['extraction']['failed'] +
-                stats['classification']['failed'] +
+            # Show number of ideas that failed at any stage
+            self.status['failed'] = max(
+                stats['extraction']['failed'],
+                stats['classification']['failed'],
                 stats['evaluation']['failed']
             )
             

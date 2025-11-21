@@ -1616,7 +1616,9 @@ async function loadAllIdeas() {
                 <div class="idea-meta" style="margin-top: 15px;">
                     ${idea.idea_id ? `<span>ID: ${idea.idea_id}</span>` : ''}
                     <span>📅 ${new Date(idea.created_at).toLocaleDateString()}</span>
-                    ${idea.score ? `<span>⭐ ${idea.score}</span>` : ''}
+                    ${idea.primary_theme ? `<span>🏷️ ${idea.primary_theme}</span>` : ''}
+                    ${idea.weighted_total_score ? `<span>⭐ ${idea.weighted_total_score.toFixed(1)}/10</span>` : ''}
+                    ${idea.investment_recommendation ? `<span style="background: ${idea.investment_recommendation === 'go' ? '#4caf50' : idea.investment_recommendation === 'consider-with-mitigations' ? '#ff9800' : '#f44336'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px;">${idea.investment_recommendation.toUpperCase()}</span>` : ''}
                 </div>
             </div>
         `).join('');
@@ -1686,7 +1688,10 @@ function showIdeaDetails(index) {
             <div class="modal-badges">
                 ${idea.idea_id ? `<span class="modal-badge">ID: ${idea.idea_id}</span>` : ''}
                 <span class="modal-badge">📅 ${new Date(idea.created_at).toLocaleDateString()}</span>
-                ${idea.score ? `<span class="modal-badge">⭐ Score: ${idea.score}</span>` : ''}
+                ${idea.primary_theme ? `<span class="modal-badge">🏷️ ${idea.primary_theme}</span>` : ''}
+                ${idea.industry ? `<span class="modal-badge">🏢 ${idea.industry}</span>` : ''}
+                ${idea.weighted_total_score ? `<span class="modal-badge">⭐ Score: ${idea.weighted_total_score.toFixed(1)}/10</span>` : ''}
+                ${idea.investment_recommendation ? `<span class="modal-badge" style="background: ${idea.investment_recommendation === 'go' ? '#4caf50' : idea.investment_recommendation === 'consider-with-mitigations' ? '#ff9800' : '#f44336'}; color: white;">${idea.investment_recommendation.toUpperCase()}</span>` : ''}
             </div>
         </div>
         

@@ -126,7 +126,7 @@ class DatabaseManager:
                 cursor.execute(f"""
                     SELECT * FROM {self.table_name}
                     WHERE extraction_status = 'completed'
-                    AND (classification_status IS NULL OR classification_status = 'pending')
+                    AND (classification_status IS NULL OR classification_status = 'pending' OR classification_status = 'failed')
                 """)
                 rows = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]
@@ -142,7 +142,7 @@ class DatabaseManager:
                 cursor.execute(f"""
                     SELECT * FROM {self.table_name}
                     WHERE classification_status = 'completed'
-                    AND (evaluation_status IS NULL OR evaluation_status = 'pending')
+                    AND (evaluation_status IS NULL OR evaluation_status = 'pending' OR evaluation_status = 'failed')
                 """)
                 rows = cursor.fetchall()
                 columns = [desc[0] for desc in cursor.description]

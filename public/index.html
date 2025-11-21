@@ -925,18 +925,32 @@
 
                             <div style="margin-bottom: 15px;">
                                 <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                                    Additional Documentation
+                                    Additional Documentation File
                                 </label>
-                                <textarea name="additional_documentation" rows="3"
-                                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                                <input type="file" name="additional_documentation" 
+                                       accept=".pdf,.docx,.pptx,.txt"
+                                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <small style="color: #666;">Accepted: PDF, DOCX, PPTX, TXT</small>
                             </div>
 
                             <div style="margin-bottom: 15px;">
                                 <label style="display: block; font-weight: 600; margin-bottom: 5px;">
-                                    Second File Info
+                                    Supporting Artefacts File
                                 </label>
-                                <textarea name="second_file_info" rows="2"
-                                          style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+                                <input type="file" name="supporting_artefacts" 
+                                       accept=".pdf,.docx,.pptx,.txt,.zip"
+                                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <small style="color: #666;">Accepted: PDF, DOCX, PPTX, TXT, ZIP</small>
+                            </div>
+
+                            <div style="margin-bottom: 15px;">
+                                <label style="display: block; font-weight: 600; margin-bottom: 5px;">
+                                    Second File Upload
+                                </label>
+                                <input type="file" name="second_file_upload" 
+                                       accept=".pdf,.docx,.pptx,.mp4,.png,.jpg,.jpeg"
+                                       style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                                <small style="color: #666;">Accepted: PDF, DOCX, PPTX, MP4, Images</small>
                             </div>
 
                             <div style="margin-bottom: 15px;">

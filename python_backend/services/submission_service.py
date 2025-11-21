@@ -263,11 +263,11 @@ class SubmissionService:
                     idea_data.get('novelty_benefits_risks'),
                     idea_data.get('responsible_ai_adherence'),
                     idea_data.get('additional_documentation'),
-                    idea_data.get('additional_documentation'),  # supporting_artefacts
+                    idea_data.get('supporting_artefacts'),
                     idea_data.get('second_file_info'),
                     idea_data.get('preferred_week'),
                     idea_data.get('build_phase_preference'),
-                    idea_data.get('build_preference'),
+                    idea_data.get('build_method_preference'),
                     idea_data.get('code_development_preference'),
                     idea_data.get('submitter_email', 'unknown@example.com')
                 ))

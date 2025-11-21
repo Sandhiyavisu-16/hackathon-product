@@ -112,8 +112,9 @@ async def submit_single_idea(
     challenge_opportunity: Optional[str] = Form(None),
     novelty_benefits_risks: Optional[str] = Form(None),
     responsible_ai_adherence: Optional[str] = Form(None),
-    additional_documentation: Optional[str] = Form(None),
-    second_file_info: Optional[str] = Form(None),
+    additional_documentation: Optional[UploadFile] = File(None),
+    supporting_artefacts: Optional[UploadFile] = File(None),
+    second_file_upload: Optional[UploadFile] = File(None),
     preferred_week: Optional[str] = Form(None),
     build_phase_preference: Optional[str] = Form(None),
     build_method_preference: Optional[str] = Form(None),
@@ -122,19 +123,28 @@ async def submit_single_idea(
 ):
     """Submit a single idea via form"""
     try:
+        # Store file names if files are uploaded
+        additional_doc_name = additional_documentation.filename if additional_documentation else None
+        supporting_art_name = supporting_artefacts.filename if supporting_artefacts else None
+        second_file_name = second_file_upload.filename if second_file_upload else None
+        
         idea_data = {
             'title': title,
             'brief_summary': brief_summary,
             'challenge_opportunity': challenge_opportunity,
             'novelty_benefits_risks': novelty_benefits_risks,
             'responsible_ai_adherence': responsible_ai_adherence,
-            'additional_documentation': additional_documentation,
-            'second_file_info': second_file_info,
+            'additional_documentation': additional_doc_name,
+            'supporting_artefacts': supporting_art_name,
+            'second_file_info': second_file_name,
             'preferred_week': preferred_week,
             'build_phase_preference': build_phase_preference,
             'build_method_preference': build_method_preference,
             'code_development_preference': code_development_preference,
         }
+        
+        # TODO: Save the actual files to storage (S3, local filesystem, etc.)
+        # For now, we just store the filenames in the database
         
         result = await submission_service.submit_single_idea(
             user['user_id'],

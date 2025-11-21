@@ -13,16 +13,26 @@ logger = logging.getLogger(__name__)
 class EvaluationPipeline:
     """Pipeline for evaluating hackathon ideas"""
     
-    def __init__(self, db_manager: DatabaseManager, api_key: Optional[str] = None):
+    def __init__(
+        self, 
+        db_manager: DatabaseManager, 
+        provider: Optional[str] = None, 
+        model_name: Optional[str] = None,
+        model_settings: Optional[Dict[str, Any]] = None
+    ):
         """
         Initialize evaluation pipeline
         
         Args:
             db_manager: Database manager instance
-            api_key: Optional Gemini API key
+            provider: LLM provider
+            model_name: Model name to use
+            model_settings: Model configuration settings
         """
         self.db_manager = db_manager
-        self.api_key = api_key
+        self.provider = provider
+        self.model_name = model_name
+        self.model_settings = model_settings or {}
     
     def run(
         self,
@@ -51,7 +61,12 @@ class EvaluationPipeline:
         logger.info(f"Using {len(rubrics)} active rubrics")
         
         # Initialize evaluator with rubrics
-        evaluator = IdeaEvaluator(rubrics=rubrics, api_key=self.api_key)
+        evaluator = IdeaEvaluator(
+            rubrics=rubrics, 
+            provider=self.provider, 
+            model_name=self.model_name,
+            model_settings=self.model_settings
+        )
         
         # Get ideas needing evaluation
         ideas = self.db_manager.get_ideas_for_evaluation()

@@ -1,45 +1,50 @@
 """
 Idea Evaluator - Scores hackathon ideas using custom rubrics
 """
-import google.generativeai as genai
 from typing import Dict, List, Any, Optional
 import logging
 import json
+import asyncio
+from services.llm_service import llm_service
 
 logger = logging.getLogger(__name__)
 
 
 class IdeaEvaluator:
-    """Evaluates ideas using rubric-based scoring with Gemini AI"""
+    """Evaluates ideas using rubric-based scoring with LLM"""
     
-    def __init__(self, rubrics: Dict[str, float], api_key: Optional[str] = None):
+    def __init__(
+        self, 
+        rubrics: Dict[str, float], 
+        provider: Optional[str] = None, 
+        model_name: Optional[str] = None,
+        model_settings: Optional[Dict[str, Any]] = None
+    ):
         """
-        Initialize evaluator with rubrics and Gemini API
+        Initialize evaluator with rubrics and LLM configuration
         
         Args:
             rubrics: Dictionary of {rubric_name: weight}
-            api_key: Optional Gemini API key
+            provider: LLM provider (gemini, azure_openai, openai, etc.)
+            model_name: Model name to use
+            model_settings: Model configuration settings (api_key, endpoint, etc.)
         """
         self.rubrics = rubrics
-        self.api_key = api_key
-        if self.api_key:
-            genai.configure(api_key=self.api_key)
-        self.model = None
+        self.provider = provider or 'gemini'
+        self.model_name = model_name or 'gemini-2.0-flash-exp'
+        self.model_settings = model_settings or {}
         
     def _ensure_configured(self):
-        """Ensure Gemini is configured with API key"""
-        if not self.api_key:
+        """Validate configuration"""
+        if not self.model_settings.get('api_key'):
             # Fall back to environment variable
             import os
-            self.api_key = os.getenv('GEMINI_API_KEY')
-            if self.api_key:
-                genai.configure(api_key=self.api_key)
+            api_key = os.getenv('GEMINI_API_KEY')
+            if api_key:
+                self.model_settings['api_key'] = api_key
                 logger.info("Using API key from environment variable")
             else:
-                raise ValueError("No Gemini API key available. Set GEMINI_API_KEY in .env file")
-        
-        if not self.model:
-            self.model = genai.GenerativeModel('gemini-1.5-flash')
+                raise ValueError("No API key available. Configure model settings or set GEMINI_API_KEY in .env file")
     
     def evaluate_idea(self, idea_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -93,10 +98,30 @@ class IdeaEvaluator:
         
         try:
             logger.info(f"Evaluating idea: {idea_data.get('idea_title', 'Unknown')}")
-            response = self.model.generate_content(prompt)
+            
+            # Use LLM service for evaluation
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                response = loop.run_until_complete(
+                    llm_service.chat_completion(
+                        provider=self.provider,
+                        model_name=self.model_name,
+                        messages=[{"role": "user", "content": prompt}],
+                        settings=self.model_settings,
+                        temperature=0.3,
+                        max_tokens=2000
+                    )
+                )
+            finally:
+                loop.close()
+            
+            if not response.get('success'):
+                raise Exception(response.get('error', 'Unknown error'))
             
             # Parse response
-            result = self._parse_evaluation_response(response.text)
+            response_text = response['choices'][0]['message']['content']
+            result = self._parse_evaluation_response(response_text)
             
             # Calculate weighted total
             weighted_total = self._calculate_weighted_total(result['scores'])

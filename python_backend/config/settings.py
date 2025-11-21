@@ -55,8 +55,8 @@ class Settings(BaseSettings):
     jwt_expiry_minutes: int = 60
     
     # Evaluation Pipeline
-    evaluation_batch_size: int = 8
-    max_file_workers: int = 3
+    evaluation_batch_size: int = 1  # Reduced to 1 for free tier rate limits
+    max_file_workers: int = 1
     max_retries: int = 3
     evaluation_timeout: int = 120
     gemini_api_key: str | None = None
