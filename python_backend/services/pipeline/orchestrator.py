@@ -66,17 +66,18 @@ class PipelineOrchestrator:
     
     def run_full_pipeline(self) -> Dict[str, Any]:
         """
-        Run the complete evaluation pipeline
+        Run the complete evaluation pipeline including verification
         
         Returns:
-            Dictionary with pipeline statistics
+            Dictionary with pipeline statistics including verification
         """
         logger.info("Starting full evaluation pipeline")
         
         stats = {
             'extraction': {'processed': 0, 'succeeded': 0, 'failed': 0},
             'classification': {'processed': 0, 'succeeded': 0, 'failed': 0},
-            'evaluation': {'processed': 0, 'succeeded': 0, 'failed': 0}
+            'evaluation': {'processed': 0, 'succeeded': 0, 'failed': 0},
+            'verification': {'processed': 0, 'passed': 0, 'failed': 0, 'warnings': 0}
         }
         
         try:
@@ -97,6 +98,12 @@ class PipelineOrchestrator:
             evaluation_stats = self.run_evaluation_stage()
             stats['evaluation'] = evaluation_stats
             logger.info(f"Evaluation complete: {evaluation_stats}")
+            
+            # Stage 4: Verification (NEW)
+            self._update_progress('verification', 0, 'Starting verification stage')
+            verification_stats = self.run_verification_stage()
+            stats['verification'] = verification_stats
+            logger.info(f"Verification complete: {verification_stats}")
             
             self._update_progress('complete', 100, 'Pipeline complete')
             logger.info("Full pipeline complete")
@@ -233,6 +240,52 @@ class PipelineOrchestrator:
             batch_size=self.batch_size,
             progress_callback=lambda p, m: self._update_progress('evaluation', p, m)
         )
+    
+    def run_verification_stage(self) -> Dict[str, int]:
+        """
+        Run verification stage for all evaluated ideas
+        
+        Returns:
+            Statistics dictionary with verification results
+        """
+        logger.info("Starting verification stage")
+        
+        try:
+            # Import verification module
+            from services.verification.post_evaluation_verifier import post_evaluation_verifier
+            
+            # Log verification start
+            logger.info("🔍 Starting post-evaluation verification...")
+            
+            # Run verification checks (synchronous call)
+            results = post_evaluation_verifier.verify_all()
+            
+            # Log verification completion
+            logger.info(f"✅ Verification completed: {results['message']}")
+            logger.info(f"   Pass rate: {results.get('pass_rate', 0):.1f}%")
+            logger.info(f"   Passed: {results.get('passed', 0)}/{results.get('total_checks', 0)} checks")
+            
+            # Return statistics in consistent format
+            return {
+                'processed': results.get('total_evaluated', 0),
+                'passed': results.get('passed', 0),
+                'failed': results.get('failed', 0),
+                'warnings': len(results.get('warnings', []))
+            }
+            
+        except Exception as e:
+            # Log error but don't fail the entire pipeline
+            logger.error(f"❌ Verification failed: {e}", exc_info=True)
+            logger.warning("⚠️  Pipeline will continue despite verification failure")
+            
+            # Return error stats
+            return {
+                'processed': 0,
+                'passed': 0,
+                'failed': 0,
+                'warnings': 0,
+                'error': str(e)
+            }
     
     def _update_progress(self, stage: str, progress: int, message: str):
         """Update progress via callback"""
