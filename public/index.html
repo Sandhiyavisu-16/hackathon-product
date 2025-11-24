@@ -605,6 +605,47 @@
         .status-offline {
             background: #f44336;
         }
+
+        /* Filter Controls Styles */
+        #sortOrder,
+        #themeFilter,
+        #recommendationFilter {
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        #sortOrder:focus,
+        #themeFilter:focus,
+        #recommendationFilter:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        #clearFiltersBtn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #clearFiltersBtn:not(:disabled):hover {
+            background: #888 !important;
+            transform: translateY(-2px);
+        }
+
+        /* Smooth transitions for filtered ideas */
+        #allIdeasContainer {
+            transition: opacity 0.2s ease-in-out;
+        }
+
+        /* Responsive design for filters */
+        @media (max-width: 768px) {
+            #filterControls > div {
+                flex-direction: column;
+            }
+            
+            #filterControls > div > div {
+                min-width: 100% !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1050,6 +1091,57 @@
             <!-- All Ideas (Admin Dashboard) -->
             <div id="allIdeasMode" style="display: none;">
                 <h3>📊 All Submitted Ideas</h3>
+                
+                <!-- Filter Controls -->
+                <div id="filterControls" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #e0e0e0;">
+                    <div style="display: flex; gap: 20px; flex-wrap: wrap; align-items: flex-start;">
+                        <!-- Sort Control -->
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
+                                📊 Sort by Score
+                            </label>
+                            <select id="sortOrder" onchange="applyFilters()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="desc">⬇️ Highest to Lowest</option>
+                                <option value="asc">⬆️ Lowest to Highest</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Theme Filter -->
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
+                                🎯 Filter by Theme
+                            </label>
+                            <select id="themeFilter" onchange="applyFilters()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="">All Themes</option>
+                                <!-- Options will be dynamically generated -->
+                            </select>
+                        </div>
+                        
+                        <!-- Investment Recommendation Filter -->
+                        <div style="flex: 1; min-width: 200px;">
+                            <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #333;">
+                                💡 Filter by Recommendation
+                            </label>
+                            <select id="recommendationFilter" onchange="applyFilters()" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                                <option value="">All Recommendations</option>
+                                <!-- Options will be dynamically generated -->
+                            </select>
+                        </div>
+                        
+                        <!-- Clear Filters Button -->
+                        <div style="align-self: flex-end;">
+                            <button id="clearFiltersBtn" class="btn" onclick="clearFilters()" style="background: #999; padding: 10px 20px;" disabled>
+                                🔄 Clear Filters
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Count -->
+                    <div id="resultsCount" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0; font-weight: 600; color: #667eea; font-size: 16px;">
+                        Showing 0 of 0 ideas
+                    </div>
+                </div>
+                
                 <div id="allIdeasLoading" style="display: none; padding: 20px; text-align: center;">
                     Loading ideas...
                 </div>

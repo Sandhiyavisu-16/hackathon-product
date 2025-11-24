@@ -368,3 +368,52 @@ class SubmissionService:
                 raise e
             finally:
                 cursor.close()
+
+    async def get_all_ideas(self) -> List[Dict[str, Any]]:
+        """Get all ideas with their evaluation scores and classification"""
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            
+            query = """
+                SELECT 
+                    i.id,
+                    i.idea_title,
+                    i.brief_summary,
+                    i.created_at,
+                    i.weighted_total_score,
+                    i.primary_theme,
+                    i.investment_recommendation,
+                    i.extraction_status,
+                    i.classification_status,
+                    i.evaluation_status
+                FROM hackathon_ideas i
+                WHERE i.extraction_status = 'completed'
+                    AND i.classification_status = 'completed'
+                    AND i.evaluation_status = 'completed'
+                ORDER BY i.created_at DESC
+            """
+            
+            cursor.execute(query)
+            rows = cursor.fetchall()
+            
+            ideas = []
+            for row in rows:
+                # Use weighted_total_score as the overall score
+                score = float(row[4]) if row[4] is not None else 0
+                
+                ideas.append({
+                    'id': row[0],
+                    'title': row[1],
+                    'brief_summary': row[2],
+                    'created_at': row[3].isoformat() if row[3] else None,
+                    'overall_score': score,
+                    'weighted_total_score': score,
+                    'theme': row[5],
+                    'primary_theme': row[5],
+                    'investment_recommendation': row[6],
+                    'extraction_status': row[7],
+                    'classification_status': row[8],
+                    'evaluation_status': row[9]
+                })
+            
+            return ideas

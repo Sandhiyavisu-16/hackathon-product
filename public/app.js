@@ -2048,3 +2048,405 @@ async function displayIdeaScores(ideaId) {
         showToast('Error', 'Failed to load evaluation scores', 'error');
     }
 }
+
+// ============================================================================
+// FILTER AND SORT FUNCTIONALITY FOR ALL IDEAS
+// ============================================================================
+
+// Filter state management
+let filterState = {
+    sortBy: 'score',
+    sortOrder: 'desc',
+    themes: [],
+    recommendations: []
+};
+
+// Store all loaded ideas for filtering
+let allLoadedIdeas = [];
+
+// Initialize filters with available options from loaded ideas
+function initializeFilters(ideas) {
+    if (!ideas || ideas.length === 0) {
+        console.log('No ideas to initialize filters');
+        return;
+    }
+    
+    // Store ideas for filtering
+    allLoadedIdeas = ideas;
+    
+    // Extract unique themes
+    const themes = [...new Set(ideas
+        .map(idea => idea.theme || idea.primary_theme)
+        .filter(theme => theme))];
+    
+    // Extract unique investment recommendations
+    const recommendations = [...new Set(ideas
+        .map(idea => idea.investment_recommendation)
+        .filter(rec => rec))];
+    
+    // Populate theme dropdown
+    const themeFilterSelect = document.getElementById('themeFilter');
+    if (themeFilterSelect && themes.length > 0) {
+        // Keep the "All Themes" option and add theme options
+        const themeOptions = themes.map(theme => 
+            `<option value="${theme}">${theme}</option>`
+        ).join('');
+        themeFilterSelect.innerHTML = '<option value="">All Themes</option>' + themeOptions;
+    }
+    
+    // Populate recommendation dropdown with friendly labels
+    const recommendationFilterSelect = document.getElementById('recommendationFilter');
+    if (recommendationFilterSelect && recommendations.length > 0) {
+        const recommendationLabels = {
+            'go': '✅ GO',
+            'consider-with-mitigations': '⚠️ CONSIDER',
+            'no-go': '❌ NO-GO'
+        };
+        
+        const recommendationOptions = recommendations.map(rec => 
+            `<option value="${rec}">${recommendationLabels[rec] || rec}</option>`
+        ).join('');
+        recommendationFilterSelect.innerHTML = '<option value="">All Recommendations</option>' + recommendationOptions;
+    }
+    
+    // Initialize with all ideas displayed
+    applyFilters();
+}
+
+// Apply filters and sorting to ideas
+function applyFilters() {
+    if (!allLoadedIdeas || allLoadedIdeas.length === 0) {
+        console.log('No ideas loaded to filter');
+        return;
+    }
+    
+    // Read current filter state from UI
+    const sortOrder = document.getElementById('sortOrder')?.value || 'desc';
+    const selectedTheme = document.getElementById('themeFilter')?.value || '';
+    const selectedRecommendation = document.getElementById('recommendationFilter')?.value || '';
+    
+    // Update filter state
+    filterState.sortOrder = sortOrder;
+    filterState.themes = selectedTheme ? [selectedTheme] : [];
+    filterState.recommendations = selectedRecommendation ? [selectedRecommendation] : [];
+    
+    // Start with all ideas
+    let filteredIdeas = [...allLoadedIdeas];
+    
+    // Apply theme filter
+    if (selectedTheme) {
+        filteredIdeas = filteredIdeas.filter(idea => {
+            const ideaTheme = idea.theme || idea.primary_theme;
+            return ideaTheme === selectedTheme;
+        });
+    }
+    
+    // Apply investment recommendation filter
+    if (selectedRecommendation) {
+        filteredIdeas = filteredIdeas.filter(idea => {
+            return idea.investment_recommendation === selectedRecommendation;
+        });
+    }
+    
+    // Sort by score
+    filteredIdeas.sort((a, b) => {
+        const scoreA = a.overall_score || a.weighted_total_score || 0;
+        const scoreB = b.overall_score || b.weighted_total_score || 0;
+        
+        if (sortOrder === 'desc') {
+            return scoreB - scoreA; // Descending
+        } else {
+            return scoreA - scoreB; // Ascending
+        }
+    });
+    
+    // Update results count
+    updateResultsCount(filteredIdeas.length, allLoadedIdeas.length);
+    
+    // Add smooth transition effect
+    const container = document.getElementById('allIdeasContainer');
+    if (container) {
+        container.style.opacity = '0.5';
+        setTimeout(() => {
+            // Render filtered ideas
+            renderFilteredIdeas(filteredIdeas);
+            container.style.opacity = '1';
+        }, 100);
+    } else {
+        // Render filtered ideas without transition
+        renderFilteredIdeas(filteredIdeas);
+    }
+    
+    // Update clear filters button state
+    const hasActiveFilters = selectedTheme !== '' || selectedRecommendation !== '';
+    const clearBtn = document.getElementById('clearFiltersBtn');
+    if (clearBtn) {
+        clearBtn.disabled = !hasActiveFilters;
+        clearBtn.style.opacity = hasActiveFilters ? '1' : '0.5';
+        clearBtn.style.cursor = hasActiveFilters ? 'pointer' : 'not-allowed';
+    }
+}
+
+// Update results count display
+function updateResultsCount(filtered, total) {
+    const resultsCountEl = document.getElementById('resultsCount');
+    if (resultsCountEl) {
+        if (filtered === total) {
+            resultsCountEl.innerHTML = `Showing <strong>${total}</strong> ${total === 1 ? 'idea' : 'ideas'}`;
+            resultsCountEl.style.color = '#667eea';
+        } else {
+            resultsCountEl.innerHTML = `Showing <strong>${filtered}</strong> of <strong>${total}</strong> ideas`;
+            resultsCountEl.style.color = '#ff9800';
+        }
+    }
+}
+
+// Render filtered and sorted ideas
+function renderFilteredIdeas(ideas) {
+    const container = document.getElementById('allIdeasContainer');
+    if (!container) {
+        console.error('Ideas container not found');
+        return;
+    }
+    
+    // Clear existing content
+    container.innerHTML = '';
+    
+    // Handle empty results
+    if (!ideas || ideas.length === 0) {
+        container.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 8px; border: 2px dashed #e0e0e0;">
+                <div style="font-size: 48px; margin-bottom: 15px;">🔍</div>
+                <h3 style="color: #666; margin-bottom: 10px;">No ideas match your filters</h3>
+                <p style="color: #999;">Try adjusting your filter selection or clear all filters to see all ideas.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Render each idea card
+    ideas.forEach(idea => {
+        const ideaCard = createIdeaCard(idea);
+        container.appendChild(ideaCard);
+    });
+}
+
+// Create an idea card element
+function createIdeaCard(idea) {
+    const card = document.createElement('div');
+    card.className = 'idea-card';
+    card.style.cursor = 'pointer';
+    card.onclick = () => displayIdeaScores(idea.id);
+    
+    // Get score and theme
+    const score = idea.overall_score || idea.weighted_total_score || 0;
+    const theme = idea.theme || idea.primary_theme || 'Unclassified';
+    const recommendation = idea.investment_recommendation || 'pending';
+    
+    // Score color
+    const scoreColor = score >= 7.5 ? '#4caf50' : score >= 5.5 ? '#ff9800' : '#f44336';
+    
+    // Investment recommendation badge
+    const recommendationBadges = {
+        'go': '<span style="background: #4caf50; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">✅ GO</span>',
+        'consider-with-mitigations': '<span style="background: #ff9800; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">⚠️ CONSIDER</span>',
+        'no-go': '<span style="background: #f44336; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">❌ NO-GO</span>',
+        'pending': '<span style="background: #999; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">⏳ Pending</span>'
+    };
+    
+    // Theme badge color
+    const themeBadgeColors = {
+        'Technology': '#2196f3',
+        'Customer': '#4caf50',
+        'Strategy': '#ff9800'
+    };
+    const themeBadgeColor = themeBadgeColors[theme] || '#999';
+    
+    card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <h4 style="margin: 0; flex: 1; color: #667eea; font-size: 18px;">
+                ${idea.title || 'Untitled Idea'}
+            </h4>
+            <div style="font-size: 24px; font-weight: 700; color: ${scoreColor}; margin-left: 15px;">
+                ${score.toFixed(1)}
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;">
+            <span style="background: ${themeBadgeColor}; color: white; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                ${theme}
+            </span>
+            ${recommendationBadges[recommendation] || recommendationBadges['pending']}
+        </div>
+        
+        <div style="color: #666; font-size: 14px; line-height: 1.5; margin-bottom: 10px;">
+            ${idea.brief_summary || idea.summary || 'No summary available'}
+        </div>
+        
+        <div style="font-size: 12px; color: #999; margin-top: 10px;">
+            ID: ${idea.id} • ${idea.created_at ? new Date(idea.created_at).toLocaleDateString() : 'Date unknown'}
+        </div>
+    `;
+    
+    return card;
+}
+
+// Clear all filters and reset to defaults
+function clearFilters() {
+    // Reset theme dropdown
+    const themeFilterSelect = document.getElementById('themeFilter');
+    if (themeFilterSelect) {
+        themeFilterSelect.value = '';
+    }
+    
+    // Reset recommendation dropdown
+    const recommendationFilterSelect = document.getElementById('recommendationFilter');
+    if (recommendationFilterSelect) {
+        recommendationFilterSelect.value = '';
+    }
+    
+    // Reset sort order to default (descending)
+    const sortOrderSelect = document.getElementById('sortOrder');
+    if (sortOrderSelect) {
+        sortOrderSelect.value = 'desc';
+    }
+    
+    // Reset filter state
+    filterState = {
+        sortBy: 'score',
+        sortOrder: 'desc',
+        themes: [],
+        recommendations: []
+    };
+    
+    // Reapply filters (which will show all ideas)
+    applyFilters();
+}
+
+// Show submission mode (single, bulk, or all)
+function showSubmissionMode(mode) {
+    // Hide all modes
+    const singleMode = document.getElementById('singleIdeaMode');
+    const bulkMode = document.getElementById('bulkUploadMode');
+    const allMode = document.getElementById('allIdeasMode');
+    const submissionsHistory = document.getElementById('submissionsHistory');
+    
+    if (singleMode) singleMode.style.display = 'none';
+    if (bulkMode) bulkMode.style.display = 'none';
+    if (allMode) allMode.style.display = 'none';
+    
+    // Update button styles
+    const singleBtn = document.getElementById('singleModeBtn');
+    const bulkBtn = document.getElementById('bulkModeBtn');
+    const allBtn = document.getElementById('allIdeasBtn');
+    
+    if (singleBtn) {
+        singleBtn.style.background = '#e0e0e0';
+        singleBtn.style.color = '#333';
+    }
+    if (bulkBtn) {
+        bulkBtn.style.background = '#e0e0e0';
+        bulkBtn.style.color = '#333';
+    }
+    if (allBtn) {
+        allBtn.style.background = '#e0e0e0';
+        allBtn.style.color = '#333';
+    }
+    
+    // Show selected mode
+    if (mode === 'single') {
+        if (singleMode) singleMode.style.display = 'block';
+        if (singleBtn) {
+            singleBtn.style.background = '#667eea';
+            singleBtn.style.color = 'white';
+        }
+        if (submissionsHistory) submissionsHistory.style.display = 'block';
+    } else if (mode === 'bulk') {
+        if (bulkMode) bulkMode.style.display = 'block';
+        if (bulkBtn) {
+            bulkBtn.style.background = '#667eea';
+            bulkBtn.style.color = 'white';
+        }
+        if (submissionsHistory) submissionsHistory.style.display = 'block';
+    } else if (mode === 'all') {
+        if (allMode) allMode.style.display = 'block';
+        if (allBtn) {
+            allBtn.style.background = '#667eea';
+            allBtn.style.color = 'white';
+        }
+        if (submissionsHistory) submissionsHistory.style.display = 'none';
+        
+        // Load all ideas when switching to this mode
+        loadAllIdeas();
+    }
+}
+
+// Load all ideas for the All Ideas section
+async function loadAllIdeas() {
+    if (!currentToken) {
+        console.error('No token available');
+        return;
+    }
+    
+    const loadingEl = document.getElementById('allIdeasLoading');
+    const containerEl = document.getElementById('allIdeasContainer');
+    
+    try {
+        // Show loading
+        if (loadingEl) loadingEl.style.display = 'block';
+        if (containerEl) containerEl.innerHTML = '';
+        
+        // Fetch all ideas from the API
+        const response = await apiCall('/api/ideas/all');
+        
+        // Hide loading
+        if (loadingEl) loadingEl.style.display = 'none';
+        
+        if (!response || !response.ideas) {
+            if (containerEl) {
+                containerEl.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 8px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+                        <h3 style="color: #666;">No ideas available</h3>
+                        <p style="color: #999;">Submit some ideas to see them here.</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        const ideas = response.ideas;
+        
+        if (ideas.length === 0) {
+            if (containerEl) {
+                containerEl.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 8px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📭</div>
+                        <h3 style="color: #666;">No ideas yet</h3>
+                        <p style="color: #999;">Be the first to submit an idea!</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        // Initialize filters with loaded ideas
+        initializeFilters(ideas);
+        
+    } catch (error) {
+        console.error('Error loading ideas:', error);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (containerEl) {
+            containerEl.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; background: white; border-radius: 8px; border: 2px solid #f44336;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">❌</div>
+                    <h3 style="color: #f44336;">Error loading ideas</h3>
+                    <p style="color: #666;">${error.message}</p>
+                    <button class="btn" onclick="loadAllIdeas()" style="margin-top: 15px;">
+                        🔄 Try Again
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
