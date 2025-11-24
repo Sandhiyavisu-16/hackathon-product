@@ -45,8 +45,8 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app
 app = FastAPI(
-    title="Innovation Idea Submission Platform",
-    description="Backend API for idea submission and evaluation",
+    title="AI Idea Evaluator",
+    description="AI-powered platform for idea submission, evaluation, and scoring",
     version="1.0.0",
     lifespan=lifespan
 )
